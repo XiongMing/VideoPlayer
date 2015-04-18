@@ -1,0 +1,24 @@
+
+# OS X temporary files
+.DS_Store
+.Trashes
+*.swp
+*.lock
+
+# Xcode
+build/
+*.pbxuser
+!default.pbxuser
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+
+

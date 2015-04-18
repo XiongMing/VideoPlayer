@@ -1,0 +1,50 @@
+#############################################################
+# Makefile for static library.
+# 编译静态链接库
+#############################################################
+#set your own environment option
+CC = g++
+CC_FLAG = -D_NOMNG -D_FILELINE
+
+#static library use 'ar' command 
+AR = ar
+
+#set your inc and lib
+#INC = -Iandroid23 -I. -I../libffmpeg/ -I../libffmpeg_so
+INC = -I. -I ../libffmpeg_so/include
+# -I../libffmpeg716/ffmpeg-0.7.16 
+LIB = -lpthread 
+
+#make target lib and relevant obj 
+PRG = libfsplayer.a
+OBJ = uallocator.o \
+      udecoder.o   \
+      ulock.o      \
+      ulog.o       \
+      uparser.o    \
+      uqueue.o     \
+      urenderer_video.o  \
+      uthread.o    \
+      udecoder_audio.o  \
+      udecoder_video.o  \
+      ulog_client.o  \
+      umsg_queue.o  \
+      uplayer.o  \
+      urenderer_audio_linux.o  \
+      usemaphore.o       \
+      utimer.o
+
+
+#all target
+all:$(PRG)
+$(PRG):$(OBJ)
+	${AR} rv ${PRG} $?
+
+.SUFFIXES: .c .o .cpp
+.cpp.o:
+	$(CC) $(CC_FLAG) $(INC) -c $*.cpp -o $*.o
+
+.PRONY:clean
+clean:
+	@echo "Removing linked and compiled files......"
+	rm -f $(OBJ) $(PRG)

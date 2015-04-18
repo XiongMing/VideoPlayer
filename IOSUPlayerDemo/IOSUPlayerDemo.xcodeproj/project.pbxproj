@@ -1,0 +1,664 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F16F43F11ACD200900EA260A /* FSIOSPlayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = F16F43EE1ACD200900EA260A /* FSIOSPlayer.mm */; };
+		F16F43F21ACD200900EA260A /* IOSEGLSurface.mm in Sources */ = {isa = PBXBuildFile; fileRef = F16F43F01ACD200900EA260A /* IOSEGLSurface.mm */; };
+		F16F44181ACD203900EA260A /* uallocator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F43F31ACD203900EA260A /* uallocator.cpp */; };
+		F16F44191ACD203900EA260A /* udecoder_audio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F43F61ACD203900EA260A /* udecoder_audio.cpp */; };
+		F16F441A1ACD203900EA260A /* udecoder_video.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F43F81ACD203900EA260A /* udecoder_video.cpp */; };
+		F16F441B1ACD203900EA260A /* udecoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F43FA1ACD203900EA260A /* udecoder.cpp */; };
+		F16F441C1ACD203900EA260A /* ugraphics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F43FD1ACD203900EA260A /* ugraphics.cpp */; };
+		F16F441D1ACD203900EA260A /* ulock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F43FF1ACD203900EA260A /* ulock.cpp */; };
+		F16F441E1ACD203900EA260A /* ulog_client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F44011ACD203900EA260A /* ulog_client.cpp */; };
+		F16F441F1ACD203900EA260A /* ulog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F44031ACD203900EA260A /* ulog.cpp */; };
+		F16F44201ACD203900EA260A /* umsg_queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F44051ACD203900EA260A /* umsg_queue.cpp */; };
+		F16F44211ACD203900EA260A /* uparser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F44071ACD203900EA260A /* uparser.cpp */; };
+		F16F44221ACD203900EA260A /* uplayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F44091ACD203900EA260A /* uplayer.cpp */; };
+		F16F44231ACD203900EA260A /* uqueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F440B1ACD203900EA260A /* uqueue.cpp */; };
+		F16F44241ACD203900EA260A /* urenderer_audioqueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F440E1ACD203900EA260A /* urenderer_audioqueue.cpp */; };
+		F16F44251ACD203900EA260A /* urenderer_video.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F44101ACD203900EA260A /* urenderer_video.cpp */; };
+		F16F44261ACD203900EA260A /* usemaphore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F44121ACD203900EA260A /* usemaphore.cpp */; };
+		F16F44271ACD203900EA260A /* uthread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F44141ACD203900EA260A /* uthread.cpp */; };
+		F16F44281ACD203900EA260A /* utimer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F44161ACD203900EA260A /* utimer.cpp */; };
+		F16F442F1ACD205B00EA260A /* libavcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F16F44291ACD205A00EA260A /* libavcodec.a */; };
+		F16F44301ACD205B00EA260A /* libavfilter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F16F442A1ACD205A00EA260A /* libavfilter.a */; };
+		F16F44311ACD205B00EA260A /* libavformat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F16F442B1ACD205A00EA260A /* libavformat.a */; };
+		F16F44321ACD205B00EA260A /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F16F442C1ACD205A00EA260A /* libavutil.a */; };
+		F16F44331ACD205B00EA260A /* libswresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F16F442D1ACD205A00EA260A /* libswresample.a */; };
+		F16F44341ACD205B00EA260A /* libswscale.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F16F442E1ACD205A00EA260A /* libswscale.a */; };
+		F17681AB1A511FBC008EBF90 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681AA1A511FBC008EBF90 /* Foundation.framework */; };
+		F17681AD1A511FBC008EBF90 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681AC1A511FBC008EBF90 /* CoreGraphics.framework */; };
+		F17681AF1A511FBC008EBF90 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681AE1A511FBC008EBF90 /* UIKit.framework */; };
+		F17681B51A511FBC008EBF90 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F17681B31A511FBC008EBF90 /* InfoPlist.strings */; };
+		F17681B71A511FBC008EBF90 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F17681B61A511FBC008EBF90 /* main.m */; };
+		F17681BB1A511FBC008EBF90 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F17681BA1A511FBC008EBF90 /* AppDelegate.m */; };
+		F17681C41A511FBC008EBF90 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F17681C31A511FBC008EBF90 /* ViewController.m */; };
+		F17681C61A511FBC008EBF90 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F17681C51A511FBC008EBF90 /* Images.xcassets */; };
+		F17681CD1A511FBC008EBF90 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681CC1A511FBC008EBF90 /* XCTest.framework */; };
+		F17681CE1A511FBC008EBF90 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681AA1A511FBC008EBF90 /* Foundation.framework */; };
+		F17681CF1A511FBC008EBF90 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681AE1A511FBC008EBF90 /* UIKit.framework */; };
+		F17681D71A511FBC008EBF90 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F17681D51A511FBC008EBF90 /* InfoPlist.strings */; };
+		F17681D91A511FBC008EBF90 /* IOSUPlayerDemoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F17681D81A511FBC008EBF90 /* IOSUPlayerDemoTests.m */; };
+		F17681E41A512032008EBF90 /* IOSUPlayerController.mm in Sources */ = {isa = PBXBuildFile; fileRef = F17681E31A512032008EBF90 /* IOSUPlayerController.mm */; };
+		F17681E91A51226E008EBF90 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681E81A51226E008EBF90 /* AudioToolbox.framework */; };
+		F17681EB1A512286008EBF90 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681EA1A512286008EBF90 /* OpenGLES.framework */; };
+		F17681ED1A512297008EBF90 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681EC1A512297008EBF90 /* MediaPlayer.framework */; };
+		F17681EF1A5122A4008EBF90 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681EE1A5122A4008EBF90 /* QuartzCore.framework */; };
+		F17681F11A5122AE008EBF90 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681F01A5122AE008EBF90 /* CoreAudio.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F17681D01A511FBC008EBF90 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F176819F1A511FBC008EBF90 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F17681A61A511FBC008EBF90;
+			remoteInfo = IOSUPlayerDemo;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		F16F43ED1ACD200900EA260A /* FSIOSPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FSIOSPlayer.h; path = ../IOSUPlayer/IOSUPlayer/FSIOSPlayer.h; sourceTree = "<group>"; };
+		F16F43EE1ACD200900EA260A /* FSIOSPlayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = FSIOSPlayer.mm; path = ../IOSUPlayer/IOSUPlayer/FSIOSPlayer.mm; sourceTree = "<group>"; };
+		F16F43EF1ACD200900EA260A /* IOSEGLSurface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IOSEGLSurface.h; path = ../IOSUPlayer/IOSUPlayer/IOSEGLSurface.h; sourceTree = "<group>"; };
+		F16F43F01ACD200900EA260A /* IOSEGLSurface.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = IOSEGLSurface.mm; path = ../IOSUPlayer/IOSUPlayer/IOSEGLSurface.mm; sourceTree = "<group>"; };
+		F16F43F31ACD203900EA260A /* uallocator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = uallocator.cpp; path = ../libfsplayer/uallocator.cpp; sourceTree = "<group>"; };
+		F16F43F41ACD203900EA260A /* uallocator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uallocator.h; path = ../libfsplayer/uallocator.h; sourceTree = "<group>"; };
+		F16F43F51ACD203900EA260A /* ucommon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ucommon.h; path = ../libfsplayer/ucommon.h; sourceTree = "<group>"; };
+		F16F43F61ACD203900EA260A /* udecoder_audio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = udecoder_audio.cpp; path = ../libfsplayer/udecoder_audio.cpp; sourceTree = "<group>"; };
+		F16F43F71ACD203900EA260A /* udecoder_audio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = udecoder_audio.h; path = ../libfsplayer/udecoder_audio.h; sourceTree = "<group>"; };
+		F16F43F81ACD203900EA260A /* udecoder_video.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = udecoder_video.cpp; path = ../libfsplayer/udecoder_video.cpp; sourceTree = "<group>"; };
+		F16F43F91ACD203900EA260A /* udecoder_video.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = udecoder_video.h; path = ../libfsplayer/udecoder_video.h; sourceTree = "<group>"; };
+		F16F43FA1ACD203900EA260A /* udecoder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = udecoder.cpp; path = ../libfsplayer/udecoder.cpp; sourceTree = "<group>"; };
+		F16F43FB1ACD203900EA260A /* udecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = udecoder.h; path = ../libfsplayer/udecoder.h; sourceTree = "<group>"; };
+		F16F43FC1ACD203900EA260A /* uerror_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uerror_code.h; path = ../libfsplayer/uerror_code.h; sourceTree = "<group>"; };
+		F16F43FD1ACD203900EA260A /* ugraphics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ugraphics.cpp; path = ../libfsplayer/ugraphics.cpp; sourceTree = "<group>"; };
+		F16F43FE1ACD203900EA260A /* ugraphics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ugraphics.h; path = ../libfsplayer/ugraphics.h; sourceTree = "<group>"; };
+		F16F43FF1ACD203900EA260A /* ulock.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ulock.cpp; path = ../libfsplayer/ulock.cpp; sourceTree = "<group>"; };
+		F16F44001ACD203900EA260A /* ulock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ulock.h; path = ../libfsplayer/ulock.h; sourceTree = "<group>"; };
+		F16F44011ACD203900EA260A /* ulog_client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ulog_client.cpp; path = ../libfsplayer/ulog_client.cpp; sourceTree = "<group>"; };
+		F16F44021ACD203900EA260A /* ulog_client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ulog_client.h; path = ../libfsplayer/ulog_client.h; sourceTree = "<group>"; };
+		F16F44031ACD203900EA260A /* ulog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ulog.cpp; path = ../libfsplayer/ulog.cpp; sourceTree = "<group>"; };
+		F16F44041ACD203900EA260A /* ulog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ulog.h; path = ../libfsplayer/ulog.h; sourceTree = "<group>"; };
+		F16F44051ACD203900EA260A /* umsg_queue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = umsg_queue.cpp; path = ../libfsplayer/umsg_queue.cpp; sourceTree = "<group>"; };
+		F16F44061ACD203900EA260A /* umsg_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = umsg_queue.h; path = ../libfsplayer/umsg_queue.h; sourceTree = "<group>"; };
+		F16F44071ACD203900EA260A /* uparser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = uparser.cpp; path = ../libfsplayer/uparser.cpp; sourceTree = "<group>"; };
+		F16F44081ACD203900EA260A /* uparser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uparser.h; path = ../libfsplayer/uparser.h; sourceTree = "<group>"; };
+		F16F44091ACD203900EA260A /* uplayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = uplayer.cpp; path = ../libfsplayer/uplayer.cpp; sourceTree = "<group>"; };
+		F16F440A1ACD203900EA260A /* uplayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uplayer.h; path = ../libfsplayer/uplayer.h; sourceTree = "<group>"; };
+		F16F440B1ACD203900EA260A /* uqueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = uqueue.cpp; path = ../libfsplayer/uqueue.cpp; sourceTree = "<group>"; };
+		F16F440C1ACD203900EA260A /* uqueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uqueue.h; path = ../libfsplayer/uqueue.h; sourceTree = "<group>"; };
+		F16F440D1ACD203900EA260A /* urenderer_audio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = urenderer_audio.h; path = ../libfsplayer/urenderer_audio.h; sourceTree = "<group>"; };
+		F16F440E1ACD203900EA260A /* urenderer_audioqueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = urenderer_audioqueue.cpp; path = ../libfsplayer/urenderer_audioqueue.cpp; sourceTree = "<group>"; };
+		F16F440F1ACD203900EA260A /* urenderer_audioqueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = urenderer_audioqueue.h; path = ../libfsplayer/urenderer_audioqueue.h; sourceTree = "<group>"; };
+		F16F44101ACD203900EA260A /* urenderer_video.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = urenderer_video.cpp; path = ../libfsplayer/urenderer_video.cpp; sourceTree = "<group>"; };
+		F16F44111ACD203900EA260A /* urenderer_video.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = urenderer_video.h; path = ../libfsplayer/urenderer_video.h; sourceTree = "<group>"; };
+		F16F44121ACD203900EA260A /* usemaphore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = usemaphore.cpp; path = ../libfsplayer/usemaphore.cpp; sourceTree = "<group>"; };
+		F16F44131ACD203900EA260A /* usemaphore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = usemaphore.h; path = ../libfsplayer/usemaphore.h; sourceTree = "<group>"; };
+		F16F44141ACD203900EA260A /* uthread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = uthread.cpp; path = ../libfsplayer/uthread.cpp; sourceTree = "<group>"; };
+		F16F44151ACD203900EA260A /* uthread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uthread.h; path = ../libfsplayer/uthread.h; sourceTree = "<group>"; };
+		F16F44161ACD203900EA260A /* utimer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = utimer.cpp; path = ../libfsplayer/utimer.cpp; sourceTree = "<group>"; };
+		F16F44171ACD203900EA260A /* utimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = utimer.h; path = ../libfsplayer/utimer.h; sourceTree = "<group>"; };
+		F16F44291ACD205A00EA260A /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../libffmpeg/ios/armv7/lib/libavcodec.a; sourceTree = "<group>"; };
+		F16F442A1ACD205A00EA260A /* libavfilter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavfilter.a; path = ../libffmpeg/ios/armv7/lib/libavfilter.a; sourceTree = "<group>"; };
+		F16F442B1ACD205A00EA260A /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../libffmpeg/ios/armv7/lib/libavformat.a; sourceTree = "<group>"; };
+		F16F442C1ACD205A00EA260A /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../libffmpeg/ios/armv7/lib/libavutil.a; sourceTree = "<group>"; };
+		F16F442D1ACD205A00EA260A /* libswresample.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswresample.a; path = ../libffmpeg/ios/armv7/lib/libswresample.a; sourceTree = "<group>"; };
+		F16F442E1ACD205A00EA260A /* libswscale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswscale.a; path = ../libffmpeg/ios/armv7/lib/libswscale.a; sourceTree = "<group>"; };
+		F17681A71A511FBC008EBF90 /* IOSUPlayerDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IOSUPlayerDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F17681AA1A511FBC008EBF90 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		F17681AC1A511FBC008EBF90 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		F17681AE1A511FBC008EBF90 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		F17681B21A511FBC008EBF90 /* IOSUPlayerDemo-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "IOSUPlayerDemo-Info.plist"; sourceTree = "<group>"; };
+		F17681B41A511FBC008EBF90 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F17681B61A511FBC008EBF90 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		F17681B81A511FBC008EBF90 /* IOSUPlayerDemo-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSUPlayerDemo-Prefix.pch"; sourceTree = "<group>"; };
+		F17681B91A511FBC008EBF90 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		F17681BA1A511FBC008EBF90 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		F17681C21A511FBC008EBF90 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		F17681C31A511FBC008EBF90 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		F17681C51A511FBC008EBF90 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		F17681CB1A511FBC008EBF90 /* IOSUPlayerDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IOSUPlayerDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F17681CC1A511FBC008EBF90 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		F17681D41A511FBC008EBF90 /* IOSUPlayerDemoTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "IOSUPlayerDemoTests-Info.plist"; sourceTree = "<group>"; };
+		F17681D61A511FBC008EBF90 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F17681D81A511FBC008EBF90 /* IOSUPlayerDemoTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = IOSUPlayerDemoTests.m; sourceTree = "<group>"; };
+		F17681E21A512032008EBF90 /* IOSUPlayerController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IOSUPlayerController.h; path = IOSUPlayerDemo/IOSUPlayerController.h; sourceTree = "<group>"; };
+		F17681E31A512032008EBF90 /* IOSUPlayerController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = IOSUPlayerController.mm; path = IOSUPlayerDemo/IOSUPlayerController.mm; sourceTree = "<group>"; };
+		F17681E81A51226E008EBF90 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		F17681EA1A512286008EBF90 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
+		F17681EC1A512297008EBF90 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
+		F17681EE1A5122A4008EBF90 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		F17681F01A5122AE008EBF90 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F17681A41A511FBC008EBF90 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F16F44331ACD205B00EA260A /* libswresample.a in Frameworks */,
+				F17681F11A5122AE008EBF90 /* CoreAudio.framework in Frameworks */,
+				F17681EF1A5122A4008EBF90 /* QuartzCore.framework in Frameworks */,
+				F16F44311ACD205B00EA260A /* libavformat.a in Frameworks */,
+				F17681AD1A511FBC008EBF90 /* CoreGraphics.framework in Frameworks */,
+				F17681E91A51226E008EBF90 /* AudioToolbox.framework in Frameworks */,
+				F17681ED1A512297008EBF90 /* MediaPlayer.framework in Frameworks */,
+				F16F44321ACD205B00EA260A /* libavutil.a in Frameworks */,
+				F16F44341ACD205B00EA260A /* libswscale.a in Frameworks */,
+				F17681AF1A511FBC008EBF90 /* UIKit.framework in Frameworks */,
+				F16F44301ACD205B00EA260A /* libavfilter.a in Frameworks */,
+				F17681AB1A511FBC008EBF90 /* Foundation.framework in Frameworks */,
+				F17681EB1A512286008EBF90 /* OpenGLES.framework in Frameworks */,
+				F16F442F1ACD205B00EA260A /* libavcodec.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F17681C81A511FBC008EBF90 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F17681CD1A511FBC008EBF90 /* XCTest.framework in Frameworks */,
+				F17681CF1A511FBC008EBF90 /* UIKit.framework in Frameworks */,
+				F17681CE1A511FBC008EBF90 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F176819E1A511FBC008EBF90 = {
+			isa = PBXGroup;
+			children = (
+				F16F43F31ACD203900EA260A /* uallocator.cpp */,
+				F16F43F41ACD203900EA260A /* uallocator.h */,
+				F16F43F51ACD203900EA260A /* ucommon.h */,
+				F16F43F61ACD203900EA260A /* udecoder_audio.cpp */,
+				F16F43F71ACD203900EA260A /* udecoder_audio.h */,
+				F16F43F81ACD203900EA260A /* udecoder_video.cpp */,
+				F16F43F91ACD203900EA260A /* udecoder_video.h */,
+				F16F43FA1ACD203900EA260A /* udecoder.cpp */,
+				F16F43FB1ACD203900EA260A /* udecoder.h */,
+				F16F43FC1ACD203900EA260A /* uerror_code.h */,
+				F16F43FD1ACD203900EA260A /* ugraphics.cpp */,
+				F16F43FE1ACD203900EA260A /* ugraphics.h */,
+				F16F43FF1ACD203900EA260A /* ulock.cpp */,
+				F16F44001ACD203900EA260A /* ulock.h */,
+				F16F44011ACD203900EA260A /* ulog_client.cpp */,
+				F16F44021ACD203900EA260A /* ulog_client.h */,
+				F16F44031ACD203900EA260A /* ulog.cpp */,
+				F16F44041ACD203900EA260A /* ulog.h */,
+				F16F44051ACD203900EA260A /* umsg_queue.cpp */,
+				F16F44061ACD203900EA260A /* umsg_queue.h */,
+				F16F44071ACD203900EA260A /* uparser.cpp */,
+				F16F44081ACD203900EA260A /* uparser.h */,
+				F16F44091ACD203900EA260A /* uplayer.cpp */,
+				F16F440A1ACD203900EA260A /* uplayer.h */,
+				F16F440B1ACD203900EA260A /* uqueue.cpp */,
+				F16F440C1ACD203900EA260A /* uqueue.h */,
+				F16F440D1ACD203900EA260A /* urenderer_audio.h */,
+				F16F440E1ACD203900EA260A /* urenderer_audioqueue.cpp */,
+				F16F440F1ACD203900EA260A /* urenderer_audioqueue.h */,
+				F16F44101ACD203900EA260A /* urenderer_video.cpp */,
+				F16F44111ACD203900EA260A /* urenderer_video.h */,
+				F16F44121ACD203900EA260A /* usemaphore.cpp */,
+				F16F44131ACD203900EA260A /* usemaphore.h */,
+				F16F44141ACD203900EA260A /* uthread.cpp */,
+				F16F44151ACD203900EA260A /* uthread.h */,
+				F16F44161ACD203900EA260A /* utimer.cpp */,
+				F16F44171ACD203900EA260A /* utimer.h */,
+				F16F43ED1ACD200900EA260A /* FSIOSPlayer.h */,
+				F16F43EE1ACD200900EA260A /* FSIOSPlayer.mm */,
+				F16F43EF1ACD200900EA260A /* IOSEGLSurface.h */,
+				F16F43F01ACD200900EA260A /* IOSEGLSurface.mm */,
+				F17681E21A512032008EBF90 /* IOSUPlayerController.h */,
+				F17681E31A512032008EBF90 /* IOSUPlayerController.mm */,
+				F17681B01A511FBC008EBF90 /* IOSUPlayerDemo */,
+				F17681D21A511FBC008EBF90 /* IOSUPlayerDemoTests */,
+				F17681A91A511FBC008EBF90 /* Frameworks */,
+				F17681A81A511FBC008EBF90 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F17681A81A511FBC008EBF90 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F17681A71A511FBC008EBF90 /* IOSUPlayerDemo.app */,
+				F17681CB1A511FBC008EBF90 /* IOSUPlayerDemoTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F17681A91A511FBC008EBF90 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F16F44291ACD205A00EA260A /* libavcodec.a */,
+				F16F442A1ACD205A00EA260A /* libavfilter.a */,
+				F16F442B1ACD205A00EA260A /* libavformat.a */,
+				F16F442C1ACD205A00EA260A /* libavutil.a */,
+				F16F442D1ACD205A00EA260A /* libswresample.a */,
+				F16F442E1ACD205A00EA260A /* libswscale.a */,
+				F17681F01A5122AE008EBF90 /* CoreAudio.framework */,
+				F17681EE1A5122A4008EBF90 /* QuartzCore.framework */,
+				F17681EC1A512297008EBF90 /* MediaPlayer.framework */,
+				F17681EA1A512286008EBF90 /* OpenGLES.framework */,
+				F17681E81A51226E008EBF90 /* AudioToolbox.framework */,
+				F17681AA1A511FBC008EBF90 /* Foundation.framework */,
+				F17681AC1A511FBC008EBF90 /* CoreGraphics.framework */,
+				F17681AE1A511FBC008EBF90 /* UIKit.framework */,
+				F17681CC1A511FBC008EBF90 /* XCTest.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		F17681B01A511FBC008EBF90 /* IOSUPlayerDemo */ = {
+			isa = PBXGroup;
+			children = (
+				F17681B91A511FBC008EBF90 /* AppDelegate.h */,
+				F17681BA1A511FBC008EBF90 /* AppDelegate.m */,
+				F17681C21A511FBC008EBF90 /* ViewController.h */,
+				F17681C31A511FBC008EBF90 /* ViewController.m */,
+				F17681C51A511FBC008EBF90 /* Images.xcassets */,
+				F17681B11A511FBC008EBF90 /* Supporting Files */,
+			);
+			path = IOSUPlayerDemo;
+			sourceTree = "<group>";
+		};
+		F17681B11A511FBC008EBF90 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				F17681B21A511FBC008EBF90 /* IOSUPlayerDemo-Info.plist */,
+				F17681B31A511FBC008EBF90 /* InfoPlist.strings */,
+				F17681B61A511FBC008EBF90 /* main.m */,
+				F17681B81A511FBC008EBF90 /* IOSUPlayerDemo-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		F17681D21A511FBC008EBF90 /* IOSUPlayerDemoTests */ = {
+			isa = PBXGroup;
+			children = (
+				F17681D81A511FBC008EBF90 /* IOSUPlayerDemoTests.m */,
+				F17681D31A511FBC008EBF90 /* Supporting Files */,
+			);
+			path = IOSUPlayerDemoTests;
+			sourceTree = "<group>";
+		};
+		F17681D31A511FBC008EBF90 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				F17681D41A511FBC008EBF90 /* IOSUPlayerDemoTests-Info.plist */,
+				F17681D51A511FBC008EBF90 /* InfoPlist.strings */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F17681A61A511FBC008EBF90 /* IOSUPlayerDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F17681DC1A511FBC008EBF90 /* Build configuration list for PBXNativeTarget "IOSUPlayerDemo" */;
+			buildPhases = (
+				F17681A31A511FBC008EBF90 /* Sources */,
+				F17681A41A511FBC008EBF90 /* Frameworks */,
+				F17681A51A511FBC008EBF90 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = IOSUPlayerDemo;
+			productName = IOSUPlayerDemo;
+			productReference = F17681A71A511FBC008EBF90 /* IOSUPlayerDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F17681CA1A511FBC008EBF90 /* IOSUPlayerDemoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F17681DF1A511FBC008EBF90 /* Build configuration list for PBXNativeTarget "IOSUPlayerDemoTests" */;
+			buildPhases = (
+				F17681C71A511FBC008EBF90 /* Sources */,
+				F17681C81A511FBC008EBF90 /* Frameworks */,
+				F17681C91A511FBC008EBF90 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F17681D11A511FBC008EBF90 /* PBXTargetDependency */,
+			);
+			name = IOSUPlayerDemoTests;
+			productName = IOSUPlayerDemoTests;
+			productReference = F17681CB1A511FBC008EBF90 /* IOSUPlayerDemoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F176819F1A511FBC008EBF90 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+				ORGANIZATIONNAME = "Funshion Online Technologies,.Ltd";
+				TargetAttributes = {
+					F17681CA1A511FBC008EBF90 = {
+						TestTargetID = F17681A61A511FBC008EBF90;
+					};
+				};
+			};
+			buildConfigurationList = F17681A21A511FBC008EBF90 /* Build configuration list for PBXProject "IOSUPlayerDemo" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = F176819E1A511FBC008EBF90;
+			productRefGroup = F17681A81A511FBC008EBF90 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F17681A61A511FBC008EBF90 /* IOSUPlayerDemo */,
+				F17681CA1A511FBC008EBF90 /* IOSUPlayerDemoTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F17681A51A511FBC008EBF90 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F17681C61A511FBC008EBF90 /* Images.xcassets in Resources */,
+				F17681B51A511FBC008EBF90 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F17681C91A511FBC008EBF90 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F17681D71A511FBC008EBF90 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F17681A31A511FBC008EBF90 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F16F441D1ACD203900EA260A /* ulock.cpp in Sources */,
+				F16F44201ACD203900EA260A /* umsg_queue.cpp in Sources */,
+				F16F44241ACD203900EA260A /* urenderer_audioqueue.cpp in Sources */,
+				F16F43F21ACD200900EA260A /* IOSEGLSurface.mm in Sources */,
+				F16F441F1ACD203900EA260A /* ulog.cpp in Sources */,
+				F16F43F11ACD200900EA260A /* FSIOSPlayer.mm in Sources */,
+				F16F44231ACD203900EA260A /* uqueue.cpp in Sources */,
+				F16F44221ACD203900EA260A /* uplayer.cpp in Sources */,
+				F16F44181ACD203900EA260A /* uallocator.cpp in Sources */,
+				F17681C41A511FBC008EBF90 /* ViewController.m in Sources */,
+				F16F44251ACD203900EA260A /* urenderer_video.cpp in Sources */,
+				F17681BB1A511FBC008EBF90 /* AppDelegate.m in Sources */,
+				F16F441A1ACD203900EA260A /* udecoder_video.cpp in Sources */,
+				F16F441C1ACD203900EA260A /* ugraphics.cpp in Sources */,
+				F16F44281ACD203900EA260A /* utimer.cpp in Sources */,
+				F16F441B1ACD203900EA260A /* udecoder.cpp in Sources */,
+				F17681E41A512032008EBF90 /* IOSUPlayerController.mm in Sources */,
+				F16F44261ACD203900EA260A /* usemaphore.cpp in Sources */,
+				F16F44271ACD203900EA260A /* uthread.cpp in Sources */,
+				F16F441E1ACD203900EA260A /* ulog_client.cpp in Sources */,
+				F17681B71A511FBC008EBF90 /* main.m in Sources */,
+				F16F44211ACD203900EA260A /* uparser.cpp in Sources */,
+				F16F44191ACD203900EA260A /* udecoder_audio.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F17681C71A511FBC008EBF90 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F17681D91A511FBC008EBF90 /* IOSUPlayerDemoTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F17681D11A511FBC008EBF90 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F17681A61A511FBC008EBF90 /* IOSUPlayerDemo */;
+			targetProxy = F17681D01A511FBC008EBF90 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		F17681B31A511FBC008EBF90 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				F17681B41A511FBC008EBF90 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		F17681D51A511FBC008EBF90 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				F17681D61A511FBC008EBF90 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		F17681DA1A511FBC008EBF90 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				ONLY_ACTIVE_ARCH = NO;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = armv7;
+			};
+			name = Debug;
+		};
+		F17681DB1A511FBC008EBF90 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				VALID_ARCHS = armv7;
+			};
+			name = Release;
+		};
+		F17681DD1A511FBC008EBF90 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_INPUT_FILETYPE = automatic;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "IOSUPlayerDemo/IOSUPlayerDemo-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					../libffmpeg,
+				);
+				INFOPLIST_FILE = "IOSUPlayerDemo/IOSUPlayerDemo-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(DEVELOPER_DIR)/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib",
+					../libffmpeg/ios/armv7/lib,
+				);
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				VALID_ARCHS = armv7;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		F17681DE1A511FBC008EBF90 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_INPUT_FILETYPE = automatic;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "IOSUPlayerDemo/IOSUPlayerDemo-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					../libffmpeg,
+				);
+				INFOPLIST_FILE = "IOSUPlayerDemo/IOSUPlayerDemo-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(DEVELOPER_DIR)/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib",
+					../libffmpeg/ios/armv7/lib,
+				);
+				OTHER_CFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				VALID_ARCHS = armv7;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		F17681E01A511FBC008EBF90 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/IOSUPlayerDemo.app/IOSUPlayerDemo";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "IOSUPlayerDemo/IOSUPlayerDemo-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "IOSUPlayerDemoTests/IOSUPlayerDemoTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		F17681E11A511FBC008EBF90 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/IOSUPlayerDemo.app/IOSUPlayerDemo";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "IOSUPlayerDemo/IOSUPlayerDemo-Prefix.pch";
+				INFOPLIST_FILE = "IOSUPlayerDemoTests/IOSUPlayerDemoTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F17681A21A511FBC008EBF90 /* Build configuration list for PBXProject "IOSUPlayerDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F17681DA1A511FBC008EBF90 /* Debug */,
+				F17681DB1A511FBC008EBF90 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F17681DC1A511FBC008EBF90 /* Build configuration list for PBXNativeTarget "IOSUPlayerDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F17681DD1A511FBC008EBF90 /* Debug */,
+				F17681DE1A511FBC008EBF90 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F17681DF1A511FBC008EBF90 /* Build configuration list for PBXNativeTarget "IOSUPlayerDemoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F17681E01A511FBC008EBF90 /* Debug */,
+				F17681E11A511FBC008EBF90 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F176819F1A511FBC008EBF90 /* Project object */;
+}
