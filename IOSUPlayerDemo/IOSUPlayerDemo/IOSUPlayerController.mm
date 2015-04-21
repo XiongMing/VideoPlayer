@@ -735,7 +735,7 @@
     _player.contentURL = _url;
 //    _player.view.frame = self.view.bounds;
     [_player setFullscreen:YES animated:YES];
-    _player.shouldAutoplay = NO;
+    _player.shouldAutoplay = YES;
     _player.initialPlaybackTime = 0;
     _player.endPlaybackTime = 0;
 //    _player.allowsAirPlay = YES;

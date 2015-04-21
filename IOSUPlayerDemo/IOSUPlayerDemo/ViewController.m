@@ -183,27 +183,44 @@
 - (void)initalTableData
 {
 
-    NSString *documentPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-    NSArray *documentPaths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:documentPath];
-    NSLog(@"tmpPaths: %@", documentPaths);
-    
-    NSArray *paths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:nil];
-    NSLog(@"paths: %@", paths);
-    _pathNames = [[NSMutableArray alloc] init];
-    _paths = [[NSMutableArray alloc] init];
-    for(int i = 0; i < paths.count; i++)
-    {
-        NSString *path = [paths objectAtIndex:i];
-        NSRange range = [path rangeOfString:@"/" options:NSBackwardsSearch];
-        NSRange mp4Range = [path rangeOfString:@".mp4" options:NSBackwardsSearch];
-        NSString *pathName = [path substringWithRange:NSMakeRange(range.location + 1, mp4Range.location - range.location - 1)];
-        [_pathNames addObject:pathName];
-        [_paths addObject:path];
-        
+//    NSString *documentPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+//    NSArray *documentPaths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:documentPath];
+//    NSLog(@"tmpPaths: %@", documentPaths);
+//    
+//    NSArray *paths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:nil];
+//    NSLog(@"paths: %@", paths);
+//    _pathNames = [[NSMutableArray alloc] init];
+//    _paths = [[NSMutableArray alloc] init];
+//    for(int i = 0; i < paths.count; i++)
+//    {
+//        NSString *path = [paths objectAtIndex:i];
+//        NSRange range = [path rangeOfString:@"/" options:NSBackwardsSearch];
+//        NSRange mp4Range = [path rangeOfString:@".mp4" options:NSBackwardsSearch];
+//        NSString *pathName = [path substringWithRange:NSMakeRange(range.location + 1, mp4Range.location - range.location - 1)];
+//        [_pathNames addObject:pathName];
+//        [_paths addObject:path];
+//        
+//    }
+//    
+//    [_pathNames addObject:@"http://192.168.16.128:81/8D5EBA72E161BDC63B5E61EA0264F791D3D47220.mp4"];
+//    [_paths addObject:@"http://192.168.16.128:81/8D5EBA72E161BDC63B5E61EA0264F791D3D47220.mp4"];
+    NSArray *tmpArray  = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSLog(@"%@", tmpArray);
+    NSString *documentPath = [tmpArray objectAtIndex:0];
+    NSLog(@"documentPath: %@", documentPath);
+    //    NSArray *documentPaths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:documentPath];
+    NSError *error = nil;
+    NSArray *filenames = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:documentPath error:&error];
+    if (!error) {
+        _pathNames = [[NSMutableArray alloc] init];
+        _paths = [[NSMutableArray alloc] init];
+        for(int i = 0; i < filenames.count; i++)
+        {
+            NSString *filename  = [filenames objectAtIndex:i];
+            [_pathNames addObject:filename];
+            [_paths addObject:[documentPath stringByAppendingPathComponent:filename]];
+        }
     }
-    
-    [_pathNames addObject:@"http://192.168.16.128:81/8D5EBA72E161BDC63B5E61EA0264F791D3D47220.mp4"];
-    [_paths addObject:@"http://192.168.16.128:81/8D5EBA72E161BDC63B5E61EA0264F791D3D47220.mp4"];
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
