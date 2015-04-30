@@ -82,7 +82,7 @@ void UDecoderAudio::updateCurrentPosition(av_link pkt) {
 
 
 		pts = packet->pts;
-
+        
 		// modified by bruce
 		//if(mPlayer->mStreamType & UPLAYER_STREAM_AUDIO)
 		pts *= av_q2d(mPlayer->mTimeBase[mPlayer->mPtsStreamIndex]);
@@ -92,16 +92,22 @@ void UDecoderAudio::updateCurrentPosition(av_link pkt) {
 	}
 	//ulog_info("CurrentPostion=%f",(double)pts);
 	//更新进度条
+    
+#if PLATFORM_DEF != IOS_PLATFORM
 	if(!mPlayer->isSeeking()){
+#endif
 		mPlayer->setCurrentPosition(pts);
 #if PLATFORM_DEF == IOS_PLATFORM
         //保证不管是刚开始播放还是快进的时候，解码完第一帧音频后，视频才能显示，做音视频同步
         if(!mPlayer->mFirstAudioPacketDecoded){
             mPlayer->mFirstAudioPacketDecoded = true;
+            ulog_info("audio=============================%f",(double)pts);
         }
         mPlayer->mAudioDecodedPts = pts;
 #endif
+#if PLATFORM_DEF != IOS_PLATFORM
 	}
+#endif
 }
 void UDecoderAudio::decode() {
 

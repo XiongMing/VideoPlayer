@@ -12,6 +12,8 @@
 //#import <sys/sysctl.h>
 //#import <mach/mach.h>
 
+#define PUBULISH_FOR_INTERNAL (true)
+
 @interface ViewController ()
 {
     UITextView *_urlText;
@@ -117,8 +119,6 @@
     CGFloat optimizeTexty = 10;
     _optimizeBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     _optimizeBtn.frame = CGRectMake(optimizeTextx, optimizeTexty, optimizeTextWidth, optimizeTextHeight);
-//    _optimizeBtn.backgroundColor = [UIColor clearColor];
-//    _optimizeBtn.backgroundColor = [UIColor redColor];
     [_optimizeBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
     [_optimizeBtn setTitle:NSLocalizedString(@"优化", nil) forState:UIControlStateNormal];
     _optimizeBtn.titleLabel.font = [UIFont systemFontOfSize:21];
@@ -182,11 +182,36 @@
 
 - (void)initalTableData
 {
-
-//    NSString *documentPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+    NSArray *externsion = [NSArray arrayWithObjects:@"avi", @"rmvb", @"mkv", @"mp4", @"ts", @"mts", @"mpg", @"rm", @"mov", @"flv", nil];
+    NSArray *tmpArray  = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSLog(@"%@", tmpArray);
+    NSString *documentPath = [tmpArray objectAtIndex:0];
+    NSLog(@"documentPath: %@", documentPath);
 //    NSArray *documentPaths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:documentPath];
-//    NSLog(@"tmpPaths: %@", documentPaths);
-//    
+    NSError *error = nil;
+    NSArray *filenames = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:documentPath error:&error];
+    if (!error) {
+        _pathNames = [[NSMutableArray alloc] init];
+        _paths = [[NSMutableArray alloc] init];
+        for(int i = 0; i < filenames.count; i++)
+        {
+            NSString *filename  = [filenames objectAtIndex:i];
+            int j = 0;
+            for(; j < externsion.count; j++)
+                if ([[filename lowercaseString] rangeOfString:[externsion objectAtIndex:j]].length > 0)
+                    break;
+            
+            if (j == externsion.count)
+                continue;
+            
+            [_pathNames addObject:filename];
+            [_paths addObject:[documentPath stringByAppendingPathComponent:filename]];
+        }
+    }
+    
+    
+    
+    
 //    NSArray *paths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:nil];
 //    NSLog(@"paths: %@", paths);
 //    _pathNames = [[NSMutableArray alloc] init];
@@ -202,35 +227,17 @@
 //        
 //    }
 //    
-//    [_pathNames addObject:@"http://192.168.16.128:81/8D5EBA72E161BDC63B5E61EA0264F791D3D47220.mp4"];
-//    [_paths addObject:@"http://192.168.16.128:81/8D5EBA72E161BDC63B5E61EA0264F791D3D47220.mp4"];
-    NSArray *tmpArray  = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSLog(@"%@", tmpArray);
-    NSString *documentPath = [tmpArray objectAtIndex:0];
-    NSLog(@"documentPath: %@", documentPath);
-    //    NSArray *documentPaths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:documentPath];
-    NSError *error = nil;
-    NSArray *filenames = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:documentPath error:&error];
-    if (!error) {
-        _pathNames = [[NSMutableArray alloc] init];
-        _paths = [[NSMutableArray alloc] init];
-        for(int i = 0; i < filenames.count; i++)
-        {
-            NSString *filename  = [filenames objectAtIndex:i];
-            [_pathNames addObject:filename];
-            [_paths addObject:[documentPath stringByAppendingPathComponent:filename]];
-        }
-    }
+    [_pathNames addObject:@"http://192.168.16.128:81/8D5EBA72E161BDC63B5E61EA0264F791D3D47220.mp4"];
+    [_paths addObject:@"http://192.168.16.128:81/8D5EBA72E161BDC63B5E61EA0264F791D3D47220.mp4"];
+
+    
 }
+
+#pragma mark - UITableViewDataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     return _pathNames.count;
-}
-
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    return 50.0;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -247,25 +254,49 @@
     
     /*关联数据*/
     cell.textLabel.text = [_pathNames objectAtIndex:indexPath.row];
+//    cell.imageView.image = [UIImage imageNamed:@"play24x24.png"];
+    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     
     return cell;
 }
 
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    
-//    NSLog(@"---->>当前行：%d",indexPath.row);
-    NSString *path = [_paths objectAtIndex:indexPath.row];
-    NSLog(@"path: %@", path);
-    IOSUPlayerController *playerController = [[IOSUPlayerController alloc]
-                                              initWithContentURL:path withEnableHevc:_enableHevc];
-    [self presentViewController:playerController animated:YES completion:nil];
+-(BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath{
+    return YES;
 }
 
-- (void)viewDidLoad
+-(void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath{
+    
+}
+
+#pragma mark - UITableViewDelegate
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    [super viewDidLoad];
+    return 50.0;
+}
+
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath{
+    
+//    cell.imageView.image = [UIImage imageNamed:@"play24x24.png"];
+}
+
+- (void)tableView:(UITableView *)tableView didEndDisplayingCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath*)indexPath NS_AVAILABLE_IOS(6_0){
+//    cell.imageView.image = nil;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    BOOL sign = NO;
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+//    NSLog(@"---->>当前行：%d",indexPath.row);
+    NSString *path = [_paths objectAtIndex:indexPath.row];
+    NSRange range = [[path lowercaseString] rangeOfString:@"mp4"];
+    NSRange range1 = [[path lowercaseString] rangeOfString:@"mov"];
+    if (range.length > 0 || range1.length > 0)
+        sign = YES;
+//    NSLog(@"path: %@", path);
+    IOSUPlayerController *playerController = [[IOSUPlayerController alloc]
+                                              initWithContentURL:path withEnableHevc:_enableHevc withHardDecoder:sign];
+    [self presentViewController:playerController animated:YES completion:nil];
 }
 
 - (void)didReceiveMemoryWarning
@@ -273,6 +304,8 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+
+#pragma mark - operation
 
 -(void) submitDidTouch:(id) sender
 {
@@ -287,8 +320,8 @@
         NSString *file1 = @"http://192.168.16.128:81/8D5EBA72E161BDC63B5E61EA0264F791D3D47220.mp4";
         NSString *file2 = @"http://111.63.135.117/77046AB4F816D76F2648505ED6E8571C1D1DFF6E.mp4";
         NSString *file3 = @"http://120.131.127.36:1186/0000000000000000000000000000000000000411.m3u8";
-        IOSUPlayerController *playerController = [[IOSUPlayerController alloc] initWithContentURL:file1 withEnableHevc:_enableHevc];
-        [self presentViewController:playerController animated:YES completion:nil];
+//        IOSUPlayerController *playerController = [[IOSUPlayerController alloc] initWithContentURL:file1 withEnableHevc:_enableHevc];
+//        [self presentViewController:playerController animated:YES completion:nil];
         NSLog(@"child controller : %d", self.childViewControllers.count);
 //    }else{
 //        NSLog(@"nil path");

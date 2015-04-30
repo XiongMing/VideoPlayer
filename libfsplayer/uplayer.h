@@ -275,6 +275,7 @@ public:
      */
     void setEndPlaybackTime(int64_t endPlayBackTime) { mEndPlaybackTime = endPlayBackTime;}
     void setRenderVideo(bool shown);
+    bool getFirstVideoFramePrepared() { return mIsFirstVideoFramePrepared; }
 #endif
 private:
 	/**

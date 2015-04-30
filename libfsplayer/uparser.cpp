@@ -88,9 +88,14 @@ int UParser::seek() {
 	mPlayer->flush();
 	//seek
 
+#if PLATFORM_DEF != IOS_PLATFORM
 	//获得seek到的时间戳
 	timestamp = mPlayer->mSeekPosition
 			* mPlayer->mTimeBase[mPlayer->mSeekStreamIndex].den / 1000;
+#else
+        timestamp = mPlayer->mSeekPosition * mPlayer->mTimeBase[mPlayer->mSeekStreamIndex].den /
+        (mPlayer->mTimeBase[mPlayer->mSeekStreamIndex].num * 1000);
+#endif
 
 	ret = av_seek_frame(mPlayer->mMediaFile, mPlayer->mSeekStreamIndex,
 			timestamp, AVSEEK_FLAG_BACKWARD);
@@ -198,10 +203,12 @@ void UParser::parse() {
             //parser结束发送缓冲结束消息
             if (mPlayer->playOver2(mPlayer->mLastPacketPts)){
                 if(!sign){
+                    //paser结束，并且不是首次播放和快进状态
                     mPlayer->mNeedBufferring = false;
                     mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_END);
                     ulog_info("MEDIA_INFO_BUFFERING_END send in urenderer_video.cpp");
                 }else{
+                    //保证yuv空槽满了，若没满而mVPacketSize为0
                     if (0 == mPlayer->mYUVSlotQueue->size() ||(0 != mPlayer->mYUVSlotQueue->size() && 0 == mPlayer->mVPacketQueue->size())) {
                         mPlayer->mNeedBufferring = false;
                         mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_END);
@@ -269,7 +276,11 @@ void UParser::parse() {
              */
             mPlayer->mFirstAudioPacketDecoded = false;
             mPlayer->mPreparedDone = 1;
-            mPlayer->mIsFirstVideoFramePrepared = false;
+            if (mPlayer->mIsFirstVideoFramePrepared) {
+                mPlayer->mIsFirstVideoFramePrepared = false;
+                mPlayer->notify(MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED);
+            }
+            
 #endif
 			ret = seek();
             

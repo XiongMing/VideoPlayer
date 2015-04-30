@@ -164,6 +164,7 @@ void EGLSurface::setUPlayer(UPlayer *player)
     
     if (_contentModeAnimation) {
         [UIView beginAnimations:@"contenMode" context:nil];
+//        [UIView setAnimationDuration:1];
     }
     
     /*Zoom images.

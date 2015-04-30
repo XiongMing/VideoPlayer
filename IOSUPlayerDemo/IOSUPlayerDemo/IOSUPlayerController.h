@@ -11,6 +11,6 @@
 
 @interface IOSUPlayerController : UIViewController/*(<IOSUPlayerDelegate>*/
 
--(id)initWithContentURL:(NSString *)url withEnableHevc:(BOOL)enableHevc;
+-(id)initWithContentURL:(NSString *)url withEnableHevc:(BOOL)enableHevc withHardDecoder:(BOOL)sign;
 
 @end

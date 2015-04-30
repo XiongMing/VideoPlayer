@@ -201,7 +201,6 @@ double UDecoderVideo::getPacketPts(AVFrame* frame){
 	}else{
 
 		pts = frame->pkt_pts;
-
 		// modified by bruce
 		pts *= av_q2d(mPlayer->mTimeBase[mPlayer->mVideoStreamIndex]);
 //		pts *= av_q2d(mPlayer->mMediaFile->streams[mPlayer->mVideoStreamIndex]->time_base);

@@ -99,16 +99,16 @@ void URendererVideo::render() {
          如果视频或者音频的缓冲队列少于UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM就
          发送缓冲开始消息 Add by HuangWeiqing
          */
-//        if (!mPlayer->playOver2(mPlayer->mLastPacketPts) && !mPlayer->mNeedBufferring
-//            && (mPlayer->mVPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM
-//                ||((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM))) {
-//                showLastFrame();
-//                mPlayer->mNeedBufferring = true;
-//                mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_START);
-//                usleep(UPLAYER_PAUSE_TIME);
-//                ulog_info("MEDIA_INFO_BUFFERING_START in renderer_video.cpp");
-//                continue;
-//            }
+        if (!mPlayer->playOver2(mPlayer->mLastPacketPts) && !mPlayer->mNeedBufferring
+            && (mPlayer->mVPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM
+                ||((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM))) {
+                showLastFrame();
+                mPlayer->mNeedBufferring = true;
+                mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_START);
+                usleep(UPLAYER_PAUSE_TIME);
+                ulog_info("MEDIA_INFO_BUFFERING_START in renderer_video.cpp");
+                continue;
+            }
         
         /*
          当前没有播放器结束并且没有发送缓冲开始消息并且
@@ -135,23 +135,15 @@ void URendererVideo::render() {
         /*备份第一帧视频数据
          Add By HuangWeiqing*/
         pthread_rwlock_rdlock(&mPlayer->mRWLock);
-        if (!mPlayer->mIsFirstVideoFramePrepared) {
-            if (mPlayer->mYUVQueue->size() == 0) {
-                pthread_rwlock_unlock(&mPlayer->mRWLock);
-                usleep(UPLAYER_PAUSE_TIME);
-                continue;
+        if (!mPlayer->mIsFirstVideoFramePrepared && mPlayer->mYUVQueue->size() != 0) {
+            pkt = (av_link)mPlayer->mYUVQueue->get();
+            if (!pkt) {
+                ulog_err("URendererVideo::render mYUVQueue->get() == NULL");
             }else{
-                pkt = (av_link)mPlayer->mYUVQueue->get();
-                if (!pkt) {
-                    pthread_rwlock_unlock(&mPlayer->mRWLock);
-                    ulog_err("URendererVideo::render mYUVQueue->get() == NULL");
-                    usleep(UPLAYER_PAUSE_TIME);
-                    continue;
-                }
                 backupLastFrame(pkt);
-                ulog_info("backup last frame =====================================");
                 mPlayer->mYUVSlotQueue->put(pkt);
                 mPlayer->mIsFirstVideoFramePrepared = true;
+                mPlayer->notifyMsg(MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED);
             }
         }
         pthread_rwlock_unlock(&mPlayer->mRWLock);
@@ -345,6 +337,8 @@ bool URendererVideo::synchronize(av_link pkt){
     diff = audio_pts - video_pts;
 	
 
+    ulog_info("audio_pts: %f, video_pts: %f, diff: %f", audio_pts, video_pts, diff);
+    
 	//视频慢8帧以上就执行seek操作
 	if(diff > UPLAYER_SYNCHRONIZE_THRESHOLD_MAX){
     #if PLATFORM_DEF != IOS_PLATFORM

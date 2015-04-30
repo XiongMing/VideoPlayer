@@ -1,14 +1,14 @@
 #include "uthread.h"
 #include "ucommon.h"
 
-UThread::UThread(const char* name){
+UThread::UThread(char* name){
 	//设置线程名字
-    mThreadName = name;
-    
+	mThreadName = name;
 	//设置线程状态
 	mRunning = false;
 }
 UThread::~UThread(){
+
 }
 int UThread::start(){
 	//启动线程函数

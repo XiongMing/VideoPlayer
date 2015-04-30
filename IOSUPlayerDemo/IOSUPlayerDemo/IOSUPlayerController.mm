@@ -1,4 +1,4 @@
-//
+    //
 //  IOSUPlayerController.m
 //  IOSUPlayerDemo
 //
@@ -10,6 +10,7 @@
 #import <MediaPlayer/MPVolumeView.h>
 #import "uerror_code.h"
 
+#define IsAtLeastiOSVersion(X) ([[[UIDevice currentDevice] systemVersion] compare:X options:NSNumericSearch] != NSOrderedAscending)
 @interface  IOSUPlayerController ()
 {
     NSURL *_url;
@@ -20,6 +21,7 @@
     UIToolbar           * _bottomBar;
     UIToolbar           * _topBar;
     UIBarButtonItem     *_playBtn;
+//    UIButton *  _playBtn;
     UIBarButtonItem     *_pauseBtn;
     UIBarButtonItem     *_rewindBtn;
     UIBarButtonItem     *_forwardBtn;
@@ -31,6 +33,7 @@
     UIBarButtonItem     *_destroyBtn;
     
     UIView              *_airPlayeBtn;
+    UIView              *_extraView;
     MPVolumeView        *_volumeView;
     
     UIView              *_topHUD;
@@ -44,9 +47,10 @@
     
     BOOL                _fspPlayerLoadFinished;
     BOOL                _hidden;
-    
-    FSIOSPlayer *   _player;
+    //MPMoviePlayerController *_player;
+    FSIOSPlayer *_player;
     BOOL        _enableHevc;
+    BOOL        _enableHardDecoder;
     
     
 }
@@ -63,14 +67,24 @@
 //        gHistory = [NSMutableDictionary dictionary];
 //}
 
--(id)initWithContentURL:(NSString *)url withEnableHevc:(BOOL)enableHevc
+-(id)initWithContentURL:(NSString *)url withEnableHevc:(BOOL)enableHevc withHardDecoder:(BOOL)sign
 {
     _enableHevc = enableHevc;
+    _enableHardDecoder = sign;
     self = [super init];
     if (!self) {
         return nil;
     }
-    _url = [NSURL URLWithString:[url stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    
+    //Local file should use fileURL
+     NSRange r = [url rangeOfString:@"http:"];
+    if (r.length > 0) {
+        _url = [NSURL URLWithString:[url stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    }else{
+        _url = [NSURL fileURLWithPath:url];
+    }
+    
+    
     
 //    NSLog(@"%@", [_url.absoluteString stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]);
     
@@ -125,6 +139,7 @@
                                                  name:MPMoviePlayerScalingModeDidChangeNotification
                                                object:_player];
     
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(willEnterFullScreen:)
                                                  name:MPMoviePlayerWillEnterFullscreenNotification object:_player];
     
@@ -136,6 +151,18 @@
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didExitFullScreen:)
                                                  name:MPMoviePlayerDidExitFullscreenNotification object:_player];
+    
+    if (IsAtLeastiOSVersion(@"6.0")) {
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(readyForDisplayDidChanged:)
+                                                     name:MPMoviePlayerReadyForDisplayDidChangeNotification
+                                                   object:_player];
+        
+    }
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(statusBarOrientationDidChange:)
+                                                 name:UIApplicationDidChangeStatusBarOrientationNotification
+                                               object:nil];
     
     return self;
 }
@@ -166,7 +193,8 @@
     
     [[UIApplication sharedApplication] setStatusBarHidden:YES];
     
-    CGRect bounds = [[UIScreen mainScreen] applicationFrame];
+//    CGRect bounds = [[UIScreen mainScreen] applicationFrame];
+    CGRect bounds = CGRectMake(0, 0, [self getFullScreenSize].width, [self getFullScreenSize].height);
     
     self.view = [[UIView alloc] initWithFrame:bounds];
     self.view.backgroundColor = [UIColor lightGrayColor];
@@ -207,6 +235,10 @@
     _leftLabel.font = [UIFont systemFontOfSize:12];
     _leftLabel.autoresizingMask = UIViewAutoresizingFlexibleRightMargin;
     
+    _extraView = [[UIView alloc] initWithFrame:bounds];
+    _extraView.backgroundColor = [UIColor clearColor];
+    _extraView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+    
     
     _rightLabel = [[UILabel alloc] initWithFrame:CGRectMake(bounds.size.width - 55, 1, 50, topH)];
     _rightLabel.backgroundColor = [UIColor clearColor];
@@ -227,7 +259,7 @@
     
     _topBar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, bounds.size.width, topH)];
     _topBar.backgroundColor = [UIColor darkGrayColor];
-    _topBar.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    _topBar.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleWidth;
     
     /************************************************************************************************************/
     
@@ -253,7 +285,6 @@
     _playBtn = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemPlay
                                                              target:self
                                                              action:@selector(playTouch:)];
-    _playBtn.width = 25;
     
     
     _pauseBtn = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemPause
@@ -301,45 +332,37 @@
                                                                target:nil
                                                                action:nil];
     
-    _fixedSpaceItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace
-                                                                    target:nil
-                                                                    action:nil];
-    
-    _spaceItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
-                                                               target:nil
-                                                               action:nil];
-    
-    _fixedSpaceItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace
-                                                                    target:nil
-                                                                    action:nil];
-    
-    
-    _fixedSpaceItem.width = 25;
     
     _airPlayeBtn = [self createAirplayBtn];
     
-    [self.view addSubview:_airPlayeBtn];
+//    [self.view addSubview:_airPlayeBtn];
+    
+    _tap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(tapOperation)];
+    _tap.numberOfTapsRequired = 2;
+    _tap.numberOfTouchesRequired = 2;
+    
     
     [_topHUD addSubview:_doneButton];
     [_topHUD addSubview:_progressSlider];
     [_topHUD addSubview:_leftLabel];
     [_topHUD addSubview:_rightLabel];
-    
     [_topBar addSubview:_topHUD];
-    [self.view addSubview:_bottomBar];
-    [self.view addSubview:_topBar];
+    
+    [self.view addSubview:_extraView];
+    [_extraView addGestureRecognizer:_tap];
+    [_extraView addSubview:_bottomBar];
+    [_extraView addSubview:_topBar];
     [_bottomBar setItems:@[_spaceItem, _rewindBtn, _spaceItem, _playBtn,
                            _spaceItem, _forwardBtn, _spaceItem,
                            _contentModeBtn, _spaceItem, _repeatModeBtn,
                            _spaceItem, _fullscreenBtn, _spaceItem, _destroyBtn,
                            _spaceItem,] animated:NO];
     
+    _topBar.backgroundColor = [UIColor orangeColor];
+    _bottomBar.backgroundColor = [UIColor redColor];
+    self.view.backgroundColor = [UIColor blackColor];
     
     [self setUIViewShow];
-    
-    _tap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(tapOperation)];
-    _tap.numberOfTapsRequired = 2;
-    _tap.numberOfTouchesRequired = 1;
     
     [self loadPlayer];
     
@@ -357,30 +380,7 @@
 
 -(void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
 {
-//    if (_fspPlayerLoadFinished) {
-//        
-//        UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
-//        
-//        if (_player.isFullscreen) {
-//            [_player setFullscreen:YES animated:NO];
-//        }else{
-//            [_player setFullscreen:NO animated:NO];
-//        }
-//        /*
-//         UIDeviceOrientationPortrait
-//         UIDeviceOrientationPortraitUpsideDown
-//         */
-//        
-//        int width = [[UIScreen mainScreen] bounds].size.width;
-//        int height = [[UIScreen mainScreen] bounds].size.height;
-//        NSLog(@"after rorating: current width: %d, height: %d", width, height);
-//        //[_player.view setFrame:CGRectMake(0, 0, width, height)];
-////        _player.view.backgroundColor = [UIColor redColor];
-//        
-//        
-//    }
-    
-    
+    //do nothing temporarily
 }
 
 - (BOOL)prefersStatusBarHidden { return YES; }
@@ -428,7 +428,6 @@
 -(void) forwardTouch:(id)sender
 {
     NSLog(@"forwardTouch");
-//    [_player seek:([_player currentPlaybackTime] + 40)];
     _player.currentPlaybackTime = (_player.currentPlaybackTime + 40);
 }
 
@@ -471,14 +470,19 @@
 }
 
 -(void)fullscreenTouch:(id)sender{
-    if (_player.isFullscreen == YES) {
-        [_player setFullscreen:NO animated:YES];
-        [_player.view setFrame:CGRectMake(5, 40, 300, 200)];
-        _fullscreenBtn.tintColor = [UIColor blueColor];
-        
+    if (_enableHardDecoder) {
+         CGSize size = [self getFullScreenSize];
+        [_player.view setFrame:CGRectMake(0, 0, size.width, size.height)];
     }else{
-        [_player setFullscreen:YES animated:YES];
-        _fullscreenBtn.tintColor = [UIColor redColor];
+        if (_player.isFullscreen == YES) {
+            [_player setFullscreen:NO animated:YES];
+            [_player.view setFrame:CGRectMake(5, 40, 300, 200)];
+            _fullscreenBtn.tintColor = [UIColor blueColor];
+            
+        }else{
+            [_player setFullscreen:YES animated:YES];
+            _fullscreenBtn.tintColor = [UIColor redColor];
+        }
     }
 }
 
@@ -527,29 +531,23 @@
     
     if (_player.loadState & MPMovieLoadStatePlayable
         && !_fspPlayerLoadFinished) {
-        NSLog(@"================================");
         _fspPlayerLoadFinished = YES;
         _hidden = NO;
         _progressSlider.hidden = NO;
         _bottomBar.hidden = NO;
         _leftLabel.text = formatTimeInterval(0, NO);
-//        if (!_player.shouldAutoplay) {
-//            [_player play];
-//        }
-        
-        
+//        [[[_player.view subviews] objectAtIndex:0] addGestureRecognizer:_tap];
+//        [self.view addGestureRecognizer:_tap];
     }
     
     if (_player.loadState == (MPMovieLoadStatePlayable | MPMovieLoadStateStalled)) {
         _activityIndicator.hidden = NO;
         [_activityIndicator startAnimating];
-        NSLog(@"Observer buffer begin");
     }
     
     if (_player.loadState == (MPMovieLoadStatePlayable | MPMovieLoadStatePlaythroughOK)) {
         _activityIndicator.hidden = YES;
         [_activityIndicator stopAnimating];
-        NSLog(@"Observer buffer end");
     }
 }
 
@@ -597,85 +595,100 @@
     NSInteger reason = [[notification.userInfo valueForKey:MPMoviePlayerPlaybackDidFinishReasonUserInfoKey] integerValue];
     
 //    NSString *info = MPMovieFinishReasonPlaybackEnded == reason ? @"正常播放结束" : MPMovieFinishReasonUserExited == reason ? @"用户主动退出" : @"播放错误";
-    NSInteger errorCode = [[notification.userInfo valueForKey:MPMoviePlayerPlaybackErrorCodeInfoKey] integerValue];
+    
     NSString *info = nil;
-    if (MPMovieFinishReasonPlaybackEnded == reason) {
-        info = @"正常播放结束";
-    }else if(MPMovieFinishReasonUserExited == reason){
-        info = @"用户主动退出";
+    if (!_enableHardDecoder) {
+    
+        NSInteger errorCode = [[notification.userInfo valueForKey:MPMoviePlayerPlaybackErrorCodeInfoKey] integerValue];
+        if (MPMovieFinishReasonPlaybackEnded == reason) {
+            info = @"正常播放结束";
+        }else if(MPMovieFinishReasonUserExited == reason){
+            info = @"用户主动退出";
+        }else{
+            switch (errorCode) {
+                case ERROR_SOFT_PLAYER_DNS_TIMEOUT:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_DNS_TIMEOUT"];
+                    break;
+                case ERROR_SOFT_PLAYER_DNS_FAILED:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_DNS_FAILED"];
+                    break;
+                case ERROR_SOFT_PLAYER_HTTP_3XX:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_HTTP_3XX"];
+                    break;
+                case ERROR_SOFT_PLAYER_HTTP_4XX:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_HTTP_4XX"];
+                    break;
+                case ERROR_SOFT_PLAYER_PREPARE_TIMEOUT:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_PREPARE_TIMEOUT"];
+                    break;
+                case ERROR_SOFT_PLAYER_UNSUPPORTED:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_UNSUPPORTED"];
+                    break;
+                case ERROR_SOFT_PLAYER_ADDRESS_NULL:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_ADDRESS_NULL"];
+                    break;
+                case ERROR_SOFT_PLAYER_SEEK_FAILED:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_SEEK_FAILED"];
+                    break;
+                case ERROR_SOFT_PLAYER_PREPARE_ERROR:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_PREPARE_ERROR"];
+                    break;
+                case ERROR_SOFT_PLAYER_SOCKET_CONNECT_TIMEOUT:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_SOCKET_CONNECT_TIMEOUT"];
+                    break;
+                case ERROR_SOFT_PLAYER_NETWORK_DISCONNECTED:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_NETWORK_DISCONNECTED"];
+                    break;
+                case ERROR_SOFT_PLAYER_AV_READ_FRAME_FAILED:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_AV_READ_FRAME_FAILED"];
+                    break;
+                case ERROR_SOFT_PLAYER_INITI_EGL_FAILED:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_INITI_EGL_FAILED"];
+                    break;
+                case ERROR_SOFT_PLAYER_LOAD_LIBFSPLAYER_FAILED:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_LOAD_LIBFSPLAYER_FAILED"];
+                    break;
+                case ERROR_SOFT_PLAYER_NO_MEMORY:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_NO_MEMORY"];
+                    break;
+                case ERROR_SOFT_PLAYER_FFMPEG:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_FFMPEG"];
+                    break;
+                case ERROR_SOFT_PLAYER_OPENSLES:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_OPENSLES"];
+                    break;
+                case ERROR_SOFT_PLAYER_BAD_INVOKE:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_BAD_INVOKE"];
+                    break;
+                case ERROR_SOFT_PLAYER_END:
+                    info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_END"];
+                    break;
+                default:
+                    info = [NSString stringWithFormat:@"播放错误: %d", errorCode];
+                    break;
+            }
+        }
     }else{
-        switch (errorCode) {
-            case ERROR_SOFT_PLAYER_DNS_TIMEOUT:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_DNS_TIMEOUT"];
-                break;
-            case ERROR_SOFT_PLAYER_DNS_FAILED:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_DNS_FAILED"];
-                break;
-            case ERROR_SOFT_PLAYER_HTTP_3XX:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_HTTP_3XX"];
-                break;
-            case ERROR_SOFT_PLAYER_HTTP_4XX:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_HTTP_4XX"];
-                break;
-            case ERROR_SOFT_PLAYER_PREPARE_TIMEOUT:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_PREPARE_TIMEOUT"];
-                break;
-            case ERROR_SOFT_PLAYER_UNSUPPORTED:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_UNSUPPORTED"];
-                break;
-            case ERROR_SOFT_PLAYER_ADDRESS_NULL:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_ADDRESS_NULL"];
-                break;
-            case ERROR_SOFT_PLAYER_SEEK_FAILED:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_SEEK_FAILED"];
-                break;
-            case ERROR_SOFT_PLAYER_PREPARE_ERROR:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_PREPARE_ERROR"];
-                break;
-            case ERROR_SOFT_PLAYER_SOCKET_CONNECT_TIMEOUT:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_SOCKET_CONNECT_TIMEOUT"];
-                break;
-            case ERROR_SOFT_PLAYER_NETWORK_DISCONNECTED:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_NETWORK_DISCONNECTED"];
-                break;
-            case ERROR_SOFT_PLAYER_AV_READ_FRAME_FAILED:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_AV_READ_FRAME_FAILED"];
-                break;
-            case ERROR_SOFT_PLAYER_INITI_EGL_FAILED:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_INITI_EGL_FAILED"];
-                break;
-            case ERROR_SOFT_PLAYER_LOAD_LIBFSPLAYER_FAILED:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_LOAD_LIBFSPLAYER_FAILED"];
-                break;
-            case ERROR_SOFT_PLAYER_NO_MEMORY:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_NO_MEMORY"];
-                break;
-            case ERROR_SOFT_PLAYER_FFMPEG:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_FFMPEG"];
-                break;
-            case ERROR_SOFT_PLAYER_OPENSLES:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_OPENSLES"];
-                break;
-            case ERROR_SOFT_PLAYER_BAD_INVOKE:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_BAD_INVOKE"];
-                break;
-            case ERROR_SOFT_PLAYER_END:
-                info = [NSString stringWithFormat:@"播放错误: %@", @"ERROR_SOFT_PLAYER_END"];
-                break;
-            default:
-                info = [NSString stringWithFormat:@"播放错误: %d", errorCode];
-                break;
+        if (MPMovieFinishReasonPlaybackError == reason) {
+            info = @"MPMovieFinishReasonPlaybackError";
+        }else if(MPMovieFinishReasonUserExited == reason){
+            info = @"MPMovieFinishReasonUserExited";
+        }else{
+            info = @"MPMovieFinishReasonUserEnded";
         }
     }
     
-    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:
-                              NSLocalizedString(@"play", nil)
-                                                        message:info
-                                                       delegate:nil
-                                              cancelButtonTitle:NSLocalizedString(@"Close", nil)
-                                              otherButtonTitles:nil];
-    
-    [alertView show];
+    NSLog(@"playbackDidFinish: %@", info);
+    if (MPMovieFinishReasonPlaybackError == reason ) {
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:
+                                  NSLocalizedString(@"play", nil)
+                                                            message:info
+                                                           delegate:nil
+                                                  cancelButtonTitle:NSLocalizedString(@"Close", nil)
+                                                  otherButtonTitles:nil];
+        
+        [alertView show];
+    }
 }
 
 -(void)playbackStateChange:(NSNotification *)notification{
@@ -721,27 +734,59 @@
     }
 }
 
+-(void)statusBarOrientationDidChange:(NSNotification *)notification{
+    CGSize size = [self getFullScreenSize];
+    _player.view.frame = CGRectMake(0, 0, size.width, size.height);
+}
+
+-(void)readyForDisplayDidChanged:(NSNotification *)notification{
+    NSLog(@"***********************readForDisplay: %@", _player.readyForDisplay ? @"YES" : @"NO");
+}
+
 #pragma mark - private
+-(CGSize)getFullScreenSize{
+    CGFloat width = [[UIScreen mainScreen] bounds].size.width;
+    CGFloat height = [[UIScreen mainScreen] bounds].size.height;
+    
+    CGFloat bigger = width > height ? width : height;
+    CGFloat smaller = width > height ? height : width;
+    
+    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+    if(UIInterfaceOrientationPortrait == orientation ||
+       UIInterfaceOrientationPortraitUpsideDown == orientation){
+        width = smaller;
+        height = bigger;
+    }else{
+        width = bigger;
+        height = smaller;
+    }
+    return CGSizeMake(width, height);
+}
 
 - (void) loadPlayer
 {
     _progressTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self
                                                     selector:@selector(updateProgressValue) userInfo:nil repeats:YES];
 //    _player = [[FSIOSPlayer alloc] initWithContentURL:_url];
-    _player = [[FSIOSPlayer alloc] init];
-    
-    _player.enableHevcOptimization = _enableHevc;
-    
+    if (_enableHardDecoder) {
+        _player = (id)[[MPMoviePlayerController alloc] init];
+        CGSize size = [self getFullScreenSize];
+        _player.view.frame = CGRectMake(0, 0, size.width, size.height);
+        _player.controlStyle = MPMovieControlStyleNone;
+        _player.view.userInteractionEnabled = NO;
+    }else{
+        _player = [[FSIOSPlayer alloc] init];
+        _player.fullScreenAnimated = YES;
+    }
+//    _player.enableHevcOptimization = _enableHevc;
     _player.contentURL = _url;
-//    _player.view.frame = self.view.bounds;
     [_player setFullscreen:YES animated:YES];
     _player.shouldAutoplay = YES;
     _player.initialPlaybackTime = 0;
     _player.endPlaybackTime = 0;
-//    _player.allowsAirPlay = YES;
     [_player prepareToPlay];
     [self.view insertSubview:_player.view atIndex:0];
-    [_player.view addGestureRecognizer:_tap];
+//    [self.view addGestureRecognizer:_tap];
 }
 
 
@@ -753,18 +798,10 @@
         [_progressTimer invalidate];
         _progressTimer = nil;
     }
-    //    if (_fspPlayerLoadFinished) {
-    //        if (_player.currentPlaybackTime == 0 || abs(_player.currentPlaybackTime  - _player.duration) <=10)
-    //            [gHistory removeObjectForKey:_player.contentURL];
-    //        else
-    //            [gHistory setValue:[NSNumber numberWithFloat:[_player currentPlaybackTime]] forKey:_player.contentURL];
-    //    }
-    //    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, NULL), ^{
     [_player stop];
     _player = nil;
     _fspPlayerLoadFinished = NO;
     printf("appWillEnterBackGroundActionOrDoneDidTouch\n");
-    //    });
     
 }
 

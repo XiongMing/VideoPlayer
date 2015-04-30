@@ -1215,6 +1215,7 @@ void UPlayer::getDuration(int* msec) {
         *msec = 0;
     } else {
         *msec = (int)(mMediaFile->duration / 1000);
+//        printf("%f", mMediaFile->streams[mSeekStreamIndex]->duration * av_q2d(mTimeBase[mSeekStreamIndex]));
     }
     
 }
@@ -1758,6 +1759,9 @@ void* UPlayer::msgThread(void* ptr) {
                 ulog_info("MEDIA_INFO_PLAY_TO_END");
                 player->notify(MEDIA_INFO_PLAY_TO_END);
                 break;
+            case MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED:
+                player->notify(MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED);
+                break;
 #endif
             default:
                 ulog_err("waitMsg default msg=%d",msg);
@@ -1819,7 +1823,6 @@ void UPlayer::setRenderVideo(bool shown){
     }else{
         ulog_info("UPlayer::setRenderVideo mRendererVideo = NULL");
     }
-    
 }
 
 #endif

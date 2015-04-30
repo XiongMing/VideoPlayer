@@ -25,7 +25,7 @@ public:
 	  * @author  YanJia
 	  * @param[in]  name 线程名称
 	*/
-	UThread(const char* name);
+	UThread(char* name);
 	/**
 	  * @brief  线程类析构函数
 	  * @author  YanJia
@@ -44,13 +44,13 @@ public:
 	  * @author  YanJia
 	  * @return void
 	*/
-    virtual void				stop() = 0;
+    virtual void				stop()=0;
 	/**
 	  * @brief  判断线程是否在运行
 	  * @author  YanJia
 	  * @return 在运行返回true，否则返回false
 	*/
-    bool						isRunning() { return mRunning; }
+    bool						isRunning(){return mRunning;}
 
 protected:
 
@@ -72,14 +72,14 @@ protected:
 	  * @author  YanJia
 	  * @return 返回线程的名称
 	*/
-    const char*					getName() { return mThreadName; }
+    char*						getName(){return mThreadName;}
 
 
 private:
 	/**
 	  * @brief  线程名称
 	*/
-    const char*					mThreadName;
+    char*						mThreadName;
 	/**
 	  * @brief  线程ID
 	*/
