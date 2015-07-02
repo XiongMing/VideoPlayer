@@ -133,6 +133,13 @@ void UDecoderVideo::decode(){
 
 	while(!mPlayer->isStop()){
     
+#if PLATFORM_DEF == IOS_PLATFORM
+        if (!(mPlayer->mStreamType & UPLAYER_STREAM_VIDEO)) {
+            usleep(UPLAYER_PAUSE_TIME);
+            continue;
+        }
+#endif
+        
 #if PLATFORM_DEF != IOS_PLATFORM
 		if(mPlayer->isPause()){
 			usleep(UPLAYER_PAUSE_TIME);
@@ -199,8 +206,12 @@ double UDecoderVideo::getPacketPts(AVFrame* frame){
 		ulog_err("UDecoderVideo::getPacketPts AV_NOPTS_VALUE == packet->pts");
 		pts = 0;
 	}else{
-
+#if PLATFORM_DEF == IOS_PLATFORM
+        pts = frame->best_effort_timestamp;
+#else
 		pts = frame->pkt_pts;
+#endif
+
 		// modified by bruce
 		pts *= av_q2d(mPlayer->mTimeBase[mPlayer->mVideoStreamIndex]);
 //		pts *= av_q2d(mPlayer->mMediaFile->streams[mPlayer->mVideoStreamIndex]->time_base);

@@ -490,6 +490,7 @@ status_t UPlayer::prepareAudio() {
         ulog_err("UPlayer::prepareAudio -1 == mAudioStreamIndex");
         return NO_ERROR;
     }
+    
     //设置流类型
     mStreamType |= UPLAYER_STREAM_AUDIO;
     
@@ -503,6 +504,14 @@ status_t UPlayer::prepareAudio() {
         set_player_error_code(this,ERROR_SOFT_PLAYER_FFMPEG);
         return FAILED;
     }
+
+#if PLATFORM_DEF == IOS_PLATFORM
+    if (AV_NOPTS_VALUE != mMediaFile->streams[mAudioStreamIndex]->start_time) {
+        mAStartTime = mMediaFile->streams[mAudioStreamIndex]->start_time * av_q2d(mTimeBase[mAudioStreamIndex]) * 1000;
+    }
+    
+#endif
+    
     //错误处理
     if (!stream->codec) {
         mState = UPLAYER_STATE_ERROR;
@@ -627,6 +636,14 @@ status_t UPlayer::prepareVideo() {
         set_player_error_code(this,ERROR_SOFT_PLAYER_FFMPEG);
         return FAILED;
     }
+    
+#if PLATFORM_DEF == IOS_PLATFORM
+    if (AV_NOPTS_VALUE != mMediaFile->streams[mVideoStreamIndex]->start_time) {
+        mVStartTime = mMediaFile->streams[mVideoStreamIndex]->start_time * av_q2d(mTimeBase[mVideoStreamIndex]) * 1000;
+    }
+    
+#endif
+    
     //错误处理
     if (!stream->codec) {
         mState = UPLAYER_STATE_ERROR;
@@ -759,7 +776,6 @@ status_t UPlayer::prepareVideo() {
     return NO_ERROR;
 }
 status_t UPlayer::prepareAsync() {
-    
     //异步线程启动perpare过程，为播放器初始化资源
     if (pthread_create(&mThread, NULL, prepareThread, this)) {
         ulog_err("pthread_create failed:prepare");
@@ -770,6 +786,15 @@ status_t UPlayer::prepareAsync() {
     }
     //返回成功状态
     return NO_ERROR;
+
+ios_prepare_err:
+    
+    mState = UPLAYER_STATE_ERROR;
+    int err = get_player_error_code(this);
+    unlock();
+    
+    this->notifyMsg(MEDIA_INFO_PLAYERROR,err);
+    return FAILED;
 }
 void* UPlayer::prepareThread(void* ptr) {
     
@@ -920,14 +945,34 @@ status_t UPlayer::_prepare() {
     }else{
         mSeekStreamIndex = mAudioStreamIndex;
     }
-    //创建音频数据包空槽队列
+
+#if PLATFORM_DEF == IOS_PLATFORM
+    if (mSampleRate >= 8000 || mFrameRate >= 12.0) {
+        int sampleRate = mSampleRate / 1000;
+        int frameRate = mFrameRate;
+        float maxBufferingDur = 20;
+        float minBufferingDur = 2;
+        mAudioSlotQueueNum = sampleRate * maxBufferingDur + 100;
+        mVideoSlotQueueNum = frameRate * maxBufferingDur + 100;
+        mMaxBufferingQueueNum = (frameRate > sampleRate ?  sampleRate : frameRate) * maxBufferingDur;
+        mMinBufferingQueueNum = (frameRate > sampleRate ? frameRate : sampleRate) * minBufferingDur;
+//        mMinBufferingQueueNum = mMinBufferingQueueNum < UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM ? UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM : mMinBufferingQueueNum;
+    }
+#endif
+    
+#if PLATFORM_DEF == IOS_PLATFORM
+    mASlotQueue = new UQueue(UQUEUE_TYPE_SLOT, mAudioSlotQueueNum, UQUEUE_TYPE_PACKET);
+#else
     mASlotQueue = new UQueue(UQUEUE_TYPE_SLOT, UPLAYER_MAX_PACKET_SLOT_NUM,
                              UQUEUE_TYPE_PACKET);
+#endif
+    //创建音频数据包空槽队列
     if (!mASlotQueue) {
         ulog_err("UPlayer::prepare new UQueue mASlotQueue failed");
         set_player_error_code(this,ERROR_SOFT_PLAYER_NO_MEMORY);
         goto prepare_err;
     }
+    
     //创建音频数据包队列
     mAPacketQueue = new UQueue(UQUEUE_TYPE_PACKET, 0);
     if (!mAPacketQueue) {
@@ -935,9 +980,14 @@ status_t UPlayer::_prepare() {
         set_player_error_code(this,ERROR_SOFT_PLAYER_NO_MEMORY);
         goto prepare_err;
     }
-    //创建视频数据包空槽队列
+#if PLATFORM_DEF == IOS_PLATFORM
+    mVSlotQueue = new UQueue(UQUEUE_TYPE_SLOT, mVideoSlotQueueNum, UQUEUE_TYPE_PACKET);
+#else
     mVSlotQueue = new UQueue(UQUEUE_TYPE_SLOT,
                              UPLAYER_MAX_VIDEO_PACKET_SLOT_NUM, UQUEUE_TYPE_PACKET);
+#endif
+    //创建视频数据包空槽队列
+    
     if (!mVSlotQueue) {
         ulog_err("UPlayer::prepare new UQueue mVSlotQueue failed");
         set_player_error_code(this,ERROR_SOFT_PLAYER_NO_MEMORY);
@@ -981,6 +1031,7 @@ status_t UPlayer::_prepare() {
         goto prepare_err;
     }
     ulog_info("UPlayer::prepare pipe line queue done");
+
     //创建拆包线程对象
     mParser = new UParser("uparser", this);
     if (!mParser) {
@@ -995,7 +1046,6 @@ status_t UPlayer::_prepare() {
         set_player_error_code(this,ERROR_SOFT_PLAYER_NO_MEMORY);
         goto prepare_err;
     }
-    
     if(mStreamType & UPLAYER_STREAM_AUDIO){
 #if PLATFORM_DEF == ANDROID_PLATFORM
         //创建音频渲染器
@@ -1014,6 +1064,7 @@ status_t UPlayer::_prepare() {
             goto prepare_err;
         }
     }
+    
     //创建视频解码线程对象
     mDecoderVideo = new UDecoderVideo("video decoder", this);
     if (!mDecoderVideo) {
@@ -1038,35 +1089,28 @@ status_t UPlayer::_prepare() {
 #if PLATFORM_DEF != IOS_PLATFORM
     //设置播放器状态为准备就绪
     mState = UPLAYER_PREPARED;
-#else
-     mState = UPLAYER_PAUSED;
-
-    if(mRendererAudio){
-        mRendererAudio->start();
-    }
-    
-    //启动视频渲染线程
-    if (mRendererVideo && mRendererVideo->start()) {
-        goto prepare_err;
-    }
-    
-    //启动音频解码线程
-    if (mStreamType & UPLAYER_STREAM_AUDIO && mDecoderAudio && mDecoderAudio->start()) {
-        goto prepare_err;
-    }
-    
-    //启动视频解码线程
-    if (mStreamType & UPLAYER_STREAM_VIDEO && mDecoderVideo && mDecoderVideo->start()) {
-        goto prepare_err;
-    }
-#endif
     //启动拆包线程
     if (mParser && mParser->start()) {
         goto prepare_err;
     }
-    
     ulog_info("UPlayer::prepare done");
     
+#else
+    mState = UPLAYER_PAUSED;
+    if(mRendererAudio) mRendererAudio->start();
+    
+    //启动视频渲染线程
+    if (mRendererVideo && mRendererVideo->start()) goto prepare_err;
+
+    //启动音频解码线程
+    if (mDecoderAudio && mDecoderAudio->start()) goto prepare_err;
+
+    //启动视频解码线程
+    if (mDecoderVideo && mDecoderVideo->start()) goto prepare_err;
+    
+    //启动拆包线程
+    if (mParser && mParser->start()) goto prepare_err;
+#endif
     //解锁
     unlock();
 #if PLATFORM_DEF == IOS_PLATFORM
@@ -1185,6 +1229,7 @@ start_err:
     //解锁
     unlock();
 #else
+    
     if (UPLAYER_PAUSED != mState) {
         set_player_error_code(this,ERROR_SOFT_PLAYER_BAD_INVOKE);
         ulog_err("UPlayer::start UPLAYER_PREPARED != mState");
@@ -1203,6 +1248,7 @@ void UPlayer::pause() {
     if (UPLAYER_STARTED == mState) {
         //设置播放器状态为暂停状态
         mState = UPLAYER_PAUSED;
+        
     }
     
 }
@@ -1215,7 +1261,6 @@ void UPlayer::getDuration(int* msec) {
         *msec = 0;
     } else {
         *msec = (int)(mMediaFile->duration / 1000);
-//        printf("%f", mMediaFile->streams[mSeekStreamIndex]->duration * av_q2d(mTimeBase[mSeekStreamIndex]));
     }
     
 }
@@ -1244,11 +1289,28 @@ void UPlayer::getCurrentPosition(int *msec) {
     
 }
 void UPlayer::setCurrentPosition(double pts) {
+#if PLATFORM_DEF != IOS_PLATFORM
     //参数判断
     if (pts > 0) {
         //设置当前播放位置，单位是毫秒
         mCurrentPosition = (int64_t) pts;
     }
+#else
+    if (pts > 0) {
+        //设置当前播放位置，单位是毫秒
+        mCurrentPosition = (int64_t) pts;
+        
+        if (mStreamType & UPLAYER_STREAM_AUDIO) {
+            if (0 != mAStartTime)
+                mCurrentPosition -= mAStartTime;
+        }else{
+            if (0 != mVStartTime) {
+                mCurrentPosition -= mVStartTime;
+            }
+        }
+        
+    }
+#endif
 }
 void UPlayer::release(){
     this->sendMsg(MEDIA_INFO_RELEASE);
@@ -1355,7 +1417,12 @@ void UPlayer::seekTo(int msec) {
         mIsSeeking = true;
         
         //设置seek到的位置,单位毫秒
+#if PLATFORM_DEF != IOS_PLATFORM
         mSeekPosition = msec;
+#else
+        int64_t startTime = (mStreamType & UPLAYER_STREAM_VIDEO) ? mVStartTime : mAStartTime;
+        mSeekPosition = (0 != startTime) ? (startTime + msec) : msec;
+#endif
         mCurrentPosition = msec;
     }
     
@@ -1568,6 +1635,7 @@ void UPlayer::init(bool flag) {
     }
     
 #if PLATFORM_DEF == IOS_PLATFORM
+    
     mRepeatMode = false;
     mEndPlaybackTime = 0;
     mLastPacketPts = 0;
@@ -1575,7 +1643,17 @@ void UPlayer::init(bool flag) {
     mFirstAudioPacketDecoded = false;
     mAudioDecodedPts = 0;
     mPreparedDone = 0;
-    mIsFirstVideoFramePrepared = false;
+    mFirstVideoFrameDecoded = false;
+    mVStartTime = 0;
+    mAStartTime = 0;
+    mAudioOrVideo = false;
+    mEof = false;
+    
+    mVideoSlotQueueNum = UPLAYER_MAX_VIDEO_PACKET_SLOT_NUM;
+    mAudioSlotQueueNum = UPLAYER_MAX_PACKET_SLOT_NUM;
+    mMinBufferingQueueNum = UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM;
+    mMaxBufferingQueueNum = UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM;
+    
 #endif
     
     
@@ -1595,21 +1673,26 @@ void UPlayer::unlock() {
 bool UPlayer::playOver(int64_t cur_pos)
 {
 #if PLATFORM_DEF == IOS_PLATFORM
-    if (mEndPlaybackTime != 0) {
-        int64_t tmpDuration = mEndPlaybackTime > (mMediaFile->duration / MS_TIME_BASE) ? (mMediaFile->duration / MS_TIME_BASE) : mEndPlaybackTime;
-        return (cur_pos + (MS_TIME_BASE >> 2)) >= tmpDuration;
-    }
-#endif
+    int64_t startTime = (mStreamType & UPLAYER_STREAM_AUDIO) ? mAStartTime : mVStartTime;
+    int64_t duration = (mMediaFile->duration / MS_TIME_BASE);
+    int64_t endTime = (mEndPlaybackTime != 0) ? (mEndPlaybackTime <= duration ? mEndPlaybackTime : duration) : duration;
+    return (cur_pos + (MS_TIME_BASE >> 2)) >= endTime;
+#else
     return (cur_pos + (MS_TIME_BASE >> 2)) >= (mMediaFile->duration / MS_TIME_BASE);
+#endif
 }
 
-bool UPlayer::playOver2(int64_t cur_pos){
 #if PLATFORM_DEF == IOS_PLATFORM
-    if (mEndPlaybackTime != 0) {
-        int64_t tmpDuration = mEndPlaybackTime > (mMediaFile->duration / MS_TIME_BASE) ? (mMediaFile->duration / MS_TIME_BASE) : mEndPlaybackTime;
-        return (cur_pos + (MS_TIME_BASE >> 1)) >= tmpDuration;
-    }
+bool UPlayer::playOver2(int64_t cur_pos, bool audioOrVieo){
+    int64_t startTime = audioOrVieo ? mVStartTime : mAStartTime;
+    int64_t duration = mMediaFile->duration / MS_TIME_BASE;
+    int64_t endTime = (mEndPlaybackTime != 0) ? (mEndPlaybackTime > duration ? duration : mEndPlaybackTime) : duration;
+    endTime += startTime;
+    return ((cur_pos + (MS_TIME_BASE >> 1)) >= endTime || mEof);
+}
 #endif
+
+bool UPlayer::playOver2(int64_t cur_pos){
     return (cur_pos + (MS_TIME_BASE >> 1)) >= (mMediaFile->duration / MS_TIME_BASE);
 }
 
@@ -1759,9 +1842,6 @@ void* UPlayer::msgThread(void* ptr) {
                 ulog_info("MEDIA_INFO_PLAY_TO_END");
                 player->notify(MEDIA_INFO_PLAY_TO_END);
                 break;
-            case MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED:
-                player->notify(MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED);
-                break;
 #endif
             default:
                 ulog_err("waitMsg default msg=%d",msg);
@@ -1823,6 +1903,7 @@ void UPlayer::setRenderVideo(bool shown){
     }else{
         ulog_info("UPlayer::setRenderVideo mRendererVideo = NULL");
     }
+    
 }
 
 #endif

@@ -28,7 +28,11 @@ typedef enum{
 /**
 * @brief  最大队列长度限制
 */
-#define UQUEUE_MAX_ITEM_NUM	1000
+#if PLATFORM_DEF != IOS_PLATFORM
+    #define UQUEUE_MAX_ITEM_NUM	1000
+#else
+    #define UQUEUE_MAX_ITEM_NUM 10000
+#endif
 
 
 /**

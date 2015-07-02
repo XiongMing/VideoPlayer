@@ -389,7 +389,6 @@ typedef enum{
 #if PLATFORM_DEF == IOS_PLATFORM
     //posted when movie plays to the end
     MEDIA_INFO_PLAY_TO_END = 999111,
-    MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED = 999112,
 #endif
     
 }MEDIA_INFO_TYPE;

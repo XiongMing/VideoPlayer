@@ -25,7 +25,8 @@ URendererAudioQueue::URendererAudioQueue(UPlayer* player,int channels, int sampl
 
 URendererAudioQueue::~URendererAudioQueue(){
 
-	AudioQueueDispose(this->mAudioQueue, false);
+//	AudioQueueDispose(this->mAudioQueue, false);
+    AudioQueueDispose(this->mAudioQueue, true);
 }
 
 int URendererAudioQueue::createAudioQueuePlayer(int channels, int samplerate){
@@ -37,6 +38,7 @@ int URendererAudioQueue::createAudioQueuePlayer(int channels, int samplerate){
     deviceFormat.mSampleRate = samplerate;
     deviceFormat.mFormatID = kAudioFormatLinearPCM;
     deviceFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger; // Signed integer, little endian
+//     deviceFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked; // Signed integer, little endian
     deviceFormat.mBytesPerPacket = 4;
     deviceFormat.mFramesPerPacket = 1;
     deviceFormat.mBytesPerFrame = 4;
@@ -48,7 +50,7 @@ int URendererAudioQueue::createAudioQueuePlayer(int channels, int samplerate){
     status = AudioQueueNewOutput(&deviceFormat,         // Format
                                  AudioQueueCallback,   					 // Callback
                                  this->mPlayer,									// User data, passed to the callback
-                                 CFRunLoopGetMain(),    					// RunLoop, CFRunLoopGetMain()
+                                 NULL, //CFRunLoopGetMain(),    					// RunLoop, CFRunLoopGetMain()
                                  kCFRunLoopCommonModes,				 // RunLoop mode, kCFRunLoopCommonModes
                                  0,                     								// Flags ; must be zero (per documentation)...
                                  &(this->mAudioQueue)); 				// Output
@@ -96,6 +98,7 @@ void URendererAudioQueue::stop(){
     //释放音频渲染线程
 	if(mPlayer && mPlayer->mPCMQueue)mPlayer->mPCMQueue->abort();
 	AudioQueueStop(this->mAudioQueue, false);
+    wait();
     
 }
 void URendererAudioQueue::handleRun(){
@@ -115,18 +118,13 @@ void URendererAudioQueue::render(){
     bool is_pause = false;
 
 	while(!mPlayer->isStop()){
-
-//		if(mPlayer->isPause()){
-//			usleep(UPLAYER_PAUSE_TIME);
-//			continue;
-//		}
-//#if PLATFORM_DEF == IOS_PLATFORM
-//        if (mPlayer->mIsFlush) {
-//            usleep(UPLAYER_PAUSE_TIME);
-//            continue;
-//        }
-//#endif
         
+#if PLATFORM_DEF == IOS_PLATFORM
+        if (!(mPlayer->mStreamType & UPLAYER_STREAM_AUDIO)) {
+            usleep(UPLAYER_PAUSE_TIME);
+            continue;
+        }
+#endif
         if (mPlayer->isPause()) {
             if (!is_pause) {
                 // 第一次进入暂停状态
@@ -144,21 +142,34 @@ void URendererAudioQueue::render(){
             }
         }
 		//获取PCM数据包
+        
+        pthread_rwlock_rdlock(&mPlayer->mRWLock);
+        if (mPlayer->mPCMQueue->size() == 0) {
+            pthread_rwlock_unlock(&mPlayer->mRWLock);
+            usleep(UPLAYER_PAUSE_TIME);
+            continue;
+        }
+        
 		pcm_pkt = (av_link)mPlayer->mPCMQueue->get();
 		if(!pcm_pkt){
 			ulog_err("URendererAudioTrack::render mPCMQueue->get() == NULL");
+            pthread_rwlock_unlock(&mPlayer->mRWLock);
+            usleep(UPLAYER_PAUSE_TIME);
 			continue;
 		}
         /*
          加锁的目的就是为了防止调用AudioQueueReset的时候，往queue里面添加数据，造成死锁
          */
         mLock.lock();
+
 		//处理数据包        
 	    status = AudioQueueAllocateBuffer(this->mAudioQueue, pcm_pkt->size, &buffer);
 	    if(status){
 	    	ulog_err("URendererAudioTrack::render AudioQueueAllocateBuffer failed");
             mLock.unlock();
-	    	return;
+            pthread_rwlock_unlock(&mPlayer->mRWLock);
+            usleep(UPLAYER_PAUSE_TIME);
+	    	continue;
 	    }
         memcpy( buffer->mAudioData, pcm_pkt->item, pcm_pkt->size );
         buffer->mAudioDataByteSize = pcm_pkt->size;
@@ -166,6 +177,7 @@ void URendererAudioQueue::render(){
         buffer->mUserData = pcm_pkt;
 	    status = AudioQueueEnqueueBuffer(mAudioQueue, buffer, 0, NULL);
         mLock.unlock();
+        pthread_rwlock_unlock(&mPlayer->mRWLock);
     }
 
     ulog_info("audio renderer exit");

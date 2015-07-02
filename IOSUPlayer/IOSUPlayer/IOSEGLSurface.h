@@ -46,6 +46,7 @@ private:
 -(void) releaseEGL;
 -(void) updateSurface;
 -(void) updateSize;
+-(BOOL)setCurrentText;
 
 @property(nonatomic, readonly)int backingWidth;
 @property(nonatomic, readonly)int backingHeight;

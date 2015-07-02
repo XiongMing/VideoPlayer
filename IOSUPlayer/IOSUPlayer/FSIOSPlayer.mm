@@ -9,7 +9,9 @@
 #import <Foundation/Foundation.h>
 #import "IOSEGLSurface.h"
 #include "uplayer.h"
-#import "sys/sysctl.h"
+//#import "sys/utsname.h"
+#import <sys/sysctl.h>
+#import <stdlib.h>
 
 #pragma mark - FSIOSPlayer Notification
 
@@ -35,14 +37,11 @@ NSString *const FSIOSPlayerMediaPlaybackDidFinishNotification = @"FSIOSPlayerMed
     NSString *const MPMoviePlayerPlaybackErrorCodeInfoKey = @"MPMoviePlayerPlaybackErrorCodeInfoKey";
 /*
  when FSIOSPlayerMediaPlaybackDidFinishNotification sends MPMovieFinishReasonPlaybackError,
-FSIOSPlayerMediaPlaybackDidFinishExtraReason message should follow which show the details of MPMovieFinishReasonPlaybackError
+FSIOSPlayerMediaPlaybackDidFinishExtraReason message should follow which shows details of MPMovieFinishReasonPlaybackError
  */
+
+
 NSString *const FSIOSPlayerMediaPlaybackToTheEndNotification = @"FSIOSPlayerMediaPlaybackToTheEndNotification";
-
-NSString *const FSIOSPlayerReadyForDisplayDidChangedNotification = @"FSIOSPlayerReadyForDisplayDidChangedNotification";
-
-
-#define IsAtLeastiOSVersion(X) ([[[UIDevice currentDevice] systemVersion] compare:X options:NSNumericSearch] != NSOrderedAscending)
 
 #pragma mark - UPlayer listner implementation
 class Listener : public UPlayerListener
@@ -86,7 +85,8 @@ void Listener::notify(int msg, int ext1, int ext2)
         }
             
             
-        case MEDIA_INFO_COMPLETED:
+//        case MEDIA_INFO_COMPLETED:
+        case MEDIA_INFO_PLAY_TO_END:
         case MEDIA_INFO_PLAYERROR:
         case MEDIA_INFO_DATA_SOURCE_ERROR:
         case MEDIA_INFO_PREPARE_ERROR:
@@ -99,7 +99,7 @@ void Listener::notify(int msg, int ext1, int ext2)
             dispatch_async(dispatch_get_main_queue(), ^{
                 
                 MPMovieFinishReason reason =
-                MEDIA_INFO_COMPLETED == msg ? MPMovieFinishReasonPlaybackEnded:MPMovieFinishReasonPlaybackError;
+                MEDIA_INFO_PLAY_TO_END == msg ? MPMovieFinishReasonPlaybackEnded:MPMovieFinishReasonPlaybackError;
                 NSNumber *number1 = [NSNumber numberWithInteger:reason];
                 NSNumber *number2 = [NSNumber numberWithInteger:ext1];
                 NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys: number1, FSIOSPlayerMediaPlaybackDidFinishReason,
@@ -141,23 +141,15 @@ void Listener::notify(int msg, int ext1, int ext2)
             break;
         }
             
-        case MEDIA_INFO_PLAY_TO_END:
-        {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [[NSNotificationCenter defaultCenter] postNotificationName:
-                 FSIOSPlayerMediaPlaybackToTheEndNotification object:_player];
-            });
-            break;
-        }
-        
-        case MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED:
-        {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [[NSNotificationCenter defaultCenter] postNotificationName:
-                 FSIOSPlayerReadyForDisplayDidChangedNotification object:_player];
-            });
-            break;
-        }
+//        case MEDIA_INFO_PLAY_TO_END:
+//        {
+//            dispatch_async(dispatch_get_main_queue(), ^{
+//                [[NSNotificationCenter defaultCenter] postNotificationName:
+//                 FSIOSPlayerMediaPlaybackToTheEndNotification object:_player];
+//            });
+//            break;
+//        }
+            
         default:
         {
             ulog_info("%d", msg);
@@ -232,7 +224,7 @@ void Listener::notify(int msg, int ext1, int ext2)
     
     if (_fullScreenAnimation && !equalBetweenTwoRects) {
         [UIView beginAnimations:@"ChangeParentSize" context:nil];
-//        [UIView setAnimationDuration:2];
+        //[UIView setAnimationDuration:2];
         [UIView setAnimationDelegate:self];
         [UIView setAnimationWillStartSelector:@selector(start)];
         [UIView setAnimationDidStopSelector:@selector(stop)];
@@ -344,6 +336,7 @@ void Listener::notify(int msg, int ext1, int ext2)
     BOOL    _innerStop;
     NSTimeInterval _currentPlaybackTime;
     NSInteger _playbackDidFinishedCode;
+    BOOL   _playerStopped;
 };
 
 @property (nonatomic, readwrite) MPMoviePlaybackState playbackState;
@@ -353,7 +346,6 @@ void Listener::notify(int msg, int ext1, int ext2)
 @property (nonatomic, readwrite) MPMovieMediaTypeMask movieMediaTypes;
 @property (nonatomic, readwrite) NSTimeInterval playableDuration;
 @property (nonatomic, readwrite) MPMovieLoadState loadState;
-@property (nonatomic, readwrite) BOOL readyForDisplay;
 @property (nonatomic, readwrite) Panel *view;
 //@property (nonatomic, readwrite) NSInteger playbackErrorCode;
 
@@ -396,6 +388,8 @@ void Listener::notify(int msg, int ext1, int ext2)
 
 
 -(void)prepareToPlay{
+    
+    if(_playerStopped || !_player) return;
     _player->setDataSource([[[_contentURL absoluteString]
                              stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] UTF8String]);
                             
@@ -409,6 +403,8 @@ void Listener::notify(int msg, int ext1, int ext2)
 }
 
 -(void)play{
+    
+    if(_playerStopped || !_player) return;
     
     if(self.loadState != (MPMovieLoadStatePlayable | MPMovieLoadStatePlaythroughOK))
        return;
@@ -426,6 +422,8 @@ void Listener::notify(int msg, int ext1, int ext2)
 }
 
 -(void)pause{
+    if(_playerStopped || !_player) return;
+    
     if(self.loadState != (MPMovieLoadStatePlayable | MPMovieLoadStatePlaythroughOK))
         return;
     
@@ -442,38 +440,19 @@ void Listener::notify(int msg, int ext1, int ext2)
 
 -(void)stop{
     
-    _player->setRenderVideo(false);
-    _player->release();
+    if (_playerStopped) return;
     
-    if(_player){
-        delete _player;
-        _player = NULL;
-    }
+    _playerStopped = YES;
     
     if (_playbackDidFinishedCode == MPMovieFinishReasonUserExited) {
         
-        NSNumber *reason = [NSNumber numberWithInteger:MPMovieFinishReasonPlaybackEnded];
+        NSNumber *reason = [NSNumber numberWithInteger:MPMovieFinishReasonUserExited];
         NSNumber *errorCode = [NSNumber numberWithInteger:0];
         NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:reason, MPMoviePlayerPlaybackDidFinishReasonUserInfoKey,
                              errorCode, MPMoviePlayerPlaybackErrorCodeInfoKey, nil];
         [self postPlaybackDidFinish:dic];
     }
     
-    if (_listener) {
-        delete _listener;
-        _listener = NULL;
-    }
-    
-    if (_egl) {
-        delete _egl;
-        _egl = NULL;
-    }
-    
-    if (_view) {
-        [_view removeFromSuperview];
-    }
-        
-    _view = nil;
     
     if (MPMoviePlaybackStateStopped != _playbackState) {
         _playbackState = MPMoviePlaybackStateStopped;
@@ -483,12 +462,46 @@ void Listener::notify(int msg, int ext1, int ext2)
                                                    postingStyle:NSPostNow];
     }
     
-    [self resetState];
+    if (!_player)  return;
     
+    _player->setRenderVideo(false);
+    _player->release();
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        
+        if(_player){
+            delete _player;
+            _player = NULL;
+        }
+        
+        
+        if (_listener) {
+            delete _listener;
+            _listener = NULL;
+        }
+        
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            
+            if (_egl) {
+                delete _egl;
+                _egl = NULL;
+            }
+            if (_view) {
+                [_view removeFromSuperview];
+            }
+            
+            _view = nil;
+        });
+    
+        
+        [self resetState];
+        
+    });
 }
 
 -(NSTimeInterval)duration{
     
+    if(_playerStopped || !_player) return 0;
     int duration;
     _player->getDuration(&duration);
     duration /= 1000;
@@ -496,7 +509,7 @@ void Listener::notify(int msg, int ext1, int ext2)
 }
 
 -(CGSize)naturalSize{
-    
+    if(_playerStopped || !_player) return CGSizeMake(0, 0);
     int width = 0;
     int height = 0;
     _player->getVideoWidth(&width);
@@ -505,6 +518,8 @@ void Listener::notify(int msg, int ext1, int ext2)
 }
 
 -(MPMovieMediaTypeMask)movieMediaTypes{
+    
+    if(_playerStopped || !_player) return MPMovieMediaTypeMaskNone;
     
     int mediaTypes = _player->getMediaTypes();
     
@@ -523,8 +538,10 @@ void Listener::notify(int msg, int ext1, int ext2)
 
 -(MPMovieSourceType)movieSourceType{
 
+    if(_playerStopped || !_player) return MPMovieSourceTypeUnknown;
+    
     NSString *path = [_contentURL absoluteString];
-    NSRange r = [path rangeOfString:@"http:"];
+    NSRange r = [path rangeOfString:@":"];
     if (r.location != NSNotFound && (self.loadState & MPMovieLoadStatePlayable))
         return MPMovieSourceTypeStreaming;
     else if(r.location == NSNotFound && (self.loadState & MPMovieLoadStatePlayable))
@@ -535,6 +552,8 @@ void Listener::notify(int msg, int ext1, int ext2)
 
 -(NSTimeInterval)currentPlaybackTime{
     
+    if(_playerStopped || !_player) return 0;
+    
     int currentPlaybackTime = 0;
     _player->getCurrentPosition(&currentPlaybackTime);
     currentPlaybackTime /= 1000;
@@ -544,6 +563,8 @@ void Listener::notify(int msg, int ext1, int ext2)
 
 -(void)setCurrentPlaybackTime:(NSTimeInterval)currentPlaybackTime{
 
+    if(_playerStopped || !_player) return ;
+    
     if (currentPlaybackTime == self.currentPlaybackTime) {
         
         return;
@@ -571,9 +592,13 @@ void Listener::notify(int msg, int ext1, int ext2)
     }
     
     NSTimeInterval seekTime = currentPlaybackTime;
+    
+    seekTime = seekTime < self.initialPlaybackTime ? self.initialPlaybackTime : seekTime;
+    double tmpDuration = self.endPlaybackTime != 0 ? self.endPlaybackTime : self.duration;
+    seekTime = seekTime > tmpDuration ? tmpDuration : seekTime;
 //    seekTime = seekTime < self.initialPlaybackTime ? self.initialPlaybackTime : seekTime;
-    seekTime = seekTime < 0.0f ? 0.0f : seekTime;
-    seekTime = seekTime > self.duration ? self.duration : seekTime;
+//    seekTime = seekTime < 0.0f ? 0.0f : seekTime;
+//    seekTime = seekTime > self.duration ? self.duration : seekTime;
     _player->seekTo(seekTime * 1000);
 }
 
@@ -630,7 +655,7 @@ void Listener::notify(int msg, int ext1, int ext2)
 
 
 -(void)setRepeatMode:(MPMovieRepeatMode)repeatMode{
-    
+    if(_playerStopped || !_player) return;
     _repeatMode = repeatMode;
     bool repeat = _repeatMode == MPMovieRepeatModeOne ? true : false;
     _player->setRepeatMode(repeat);
@@ -664,6 +689,7 @@ void Listener::notify(int msg, int ext1, int ext2)
 
 -(void)setEndPlaybackTime:(NSTimeInterval)endPlaybackTime{
     
+    if(_playerStopped || !_player) return ;
     if (endPlaybackTime > 0) {
         _endPlaybackTime = endPlaybackTime;
         _player->setEndPlaybackTime(endPlaybackTime * 1000);
@@ -671,6 +697,8 @@ void Listener::notify(int msg, int ext1, int ext2)
 }
 
 -(void)setEnableHevcOptimization:(BOOL)enableHevcOptimization{
+    
+    if(_playerStopped || !_player) return ;
     int flag = enableHevcOptimization ? 1 : 0;
     _player->enableHEVC(flag);
 }
@@ -682,7 +710,6 @@ void Listener::notify(int msg, int ext1, int ext2)
     NSNotification *notification1 = [NSNotification notificationWithName:
                                      MPMoviePlayerLoadStateDidChangeNotification object:self];
     [[NSNotificationQueue defaultQueue] enqueueNotification:notification1 postingStyle:NSPostNow];
-    
     
     if (self.initialPlaybackTime > 0) {
         
@@ -733,6 +760,7 @@ void Listener::notify(int msg, int ext1, int ext2)
 
 -(void)mediaSeekComplete:(NSNotification *)notification{
     
+    if (_playerStopped || !_player) return;
     self.playbackState = _player->isPlaying() ? MPMoviePlaybackStatePlaying : MPMoviePlaybackStatePaused;
     NSNotification * notification1 = [NSNotification notificationWithName:
                                      MPMoviePlayerPlaybackStateDidChangeNotification object:self];
@@ -741,9 +769,16 @@ void Listener::notify(int msg, int ext1, int ext2)
 }
 
 -(void)playbackDidFinish:(NSNotification *)notification{
+
+    if(MPMovieFinishReasonPlaybackEnded == [[notification.userInfo objectForKey:FSIOSPlayerMediaPlaybackDidFinishReason] integerValue]){
+        if (MPMovieRepeatModeOne == self.repeatMode){
+            self.currentPlaybackTime = self.initialPlaybackTime;
+        }else{
+            [self pause];
+        }
+    }
     
     NSNumber *reason = [notification.userInfo objectForKey:FSIOSPlayerMediaPlaybackDidFinishReason];
-    _playbackDidFinishedCode = [reason integerValue];
     NSNumber *errorCode = [notification.userInfo objectForKey:FSIOSPlayerMediaPlaybackDidFinishExtraReason];
     NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:reason, MPMoviePlayerPlaybackDidFinishReasonUserInfoKey,
                          errorCode, MPMoviePlayerPlaybackErrorCodeInfoKey, nil];
@@ -751,24 +786,16 @@ void Listener::notify(int msg, int ext1, int ext2)
 }
 
 -(void)postPlaybackDidFinish:(NSDictionary *)dic{
-    NSNotification * notification = [NSNotification notificationWithName:MPMoviePlayerPlaybackDidFinishNotification
-                                    object:self userInfo:dic];
-    [[NSNotificationQueue defaultQueue] enqueueNotification:notification postingStyle:NSPostNow];
+        NSNotification * notification = [NSNotification notificationWithName:MPMoviePlayerPlaybackDidFinishNotification
+                                        object:self userInfo:dic];
+        [[NSNotificationQueue defaultQueue] enqueueNotification:notification postingStyle:NSPostNow];
 }
 
--(void)playToTheEnd:(NSNotification *)notification{
-    
-    self.currentPlaybackTime = self.initialPlaybackTime;
-    //_firstPlay = FALSE;
-}
-
--(void)playerReadyForDisplayDidChange:(NSNotification *)notification{
-    _readyForDisplay = (_player->getFirstVideoFramePrepared() ? YES : NO);
-    if(IsAtLeastiOSVersion(@"6.0")){
-        NSNotification *notification1 = [NSNotification notificationWithName:MPMoviePlayerReadyForDisplayDidChangeNotification object:self];
-        [[NSNotificationQueue defaultQueue] enqueueNotification:notification1 postingStyle:NSPostNow];
-    }
-}
+//-(void)playToTheEnd:(NSNotification *)notification{
+//    
+//    self.currentPlaybackTime = self.initialPlaybackTime;
+//    //_firstPlay = FALSE;
+//}
 
 -(void)statusBarOrientationDidChange:(NSNotification *)notification{
     if(self.isFullscreen)
@@ -789,21 +816,22 @@ void Listener::notify(int msg, int ext1, int ext2)
      "setRenderVideo" and "stop" are called in main thread, so it is safe in 
      this situation. Or dead-lock may take place.
      */
-    if (_player) {
-        _player->setRenderVideo(false);
+    if (_playerStopped || !_player)  return;
+    _player->setRenderVideo(false);
         ulog_info("willResignActive false");
-    }
-    NSLog(@"testtesttes");
+
+    
+//    [self pause];
 }
 
 -(void)becomeActive:(NSNotification *)notification{
     /*
      Has the same situation as above.
      */
-    if(_player){
-        _player->setRenderVideo(true);
-        ulog_info("becomeActive true");
-    }
+    if (_playerStopped || !_player)  return;
+    _player->setRenderVideo(true);
+    ulog_info("becomeActive true");
+//    [self play];
 }
 
 -(void)didEnterFullScreen:(NSNotification *)notification{
@@ -821,6 +849,8 @@ void Listener::notify(int msg, int ext1, int ext2)
 #pragma mark - -private
 
 -(BOOL)realInit{
+    
+    _playerStopped = NO;
     
     [self resetState];
     
@@ -893,7 +923,6 @@ void Listener::notify(int msg, int ext1, int ext2)
     _currentFullscreenFrame = CGRectMake(0, 0, 0, 0);
     _fullScreenAnimated = NO;
     _playbackDidFinishedCode = MPMovieFinishReasonUserExited;
-    _readyForDisplay = NO;
 }
 
 
@@ -925,15 +954,11 @@ void Listener::notify(int msg, int ext1, int ext2)
                                                  name:FSIOSPlayerMediaPlaybackDidFinishNotification
                                                object:self];
     
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(playToTheEnd:)
-                                                 name:FSIOSPlayerMediaPlaybackToTheEndNotification
-                                               object:self];
+//    [[NSNotificationCenter defaultCenter] addObserver:self
+//                                             selector:@selector(playToTheEnd:)
+//                                                 name:FSIOSPlayerMediaPlaybackToTheEndNotification
+//                                               object:self];
     
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(playerReadyForDisplayDidChange:)
-                                                 name:FSIOSPlayerReadyForDisplayDidChangedNotification
-                                               object:self];
     
     //Posted by ios system.
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(willResignActive:)
@@ -981,123 +1006,67 @@ void Listener::notify(int msg, int ext1, int ext2)
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     NSLog(@"FSIOSPlayer %@ dealloc", self);
 }
-@end
 
+#pragma mark - global
 
-#pragma mark - static
-
-typedef struct DeviceVersion{
-    //0 iphone
-    //1 ipad
-    //2 ipod
-    //-1 error
-    int device;
-    int mainVersion;
-    int extraVersion;
-    
-}DeviceVersion;
-
-FSIOSPlayerDefinitionMode getAVClarity(){
-    return FSIOSPlayerDefinitionModeNone;
-}
-
-static DeviceVersion stringToDeviceVersion(NSString *platform){
-    /*
-     //iPhone
-     iPhone1,1 iphone 1
-     
-     iPhone1,2 iphone 3
-     iPhone2,1 iphone 3gs
-     
-     //标清
-     iPhone3,1 iphone 4
-     iPhone3,2 iphone 4
-     iPhone3,3 iphone 4
-     
-     iPhone4,1 iphone 4s
-     
-     //超清
-     iPhone5,1 iphone 5
-     iPhone5,2 iphone 5
-     
-     iPhone5,3 iphone 5c
-     iPhone5,4 iphone 5c
-     
-     iPhone6,1 iphone 5s
-     iPhone6,2 iphone 5s
-     
-     iPhone7,1 iphone 6
-     iPhone7,2 iphone 6plus
-     
-     
-     //iPod
-     iPod1,1 ipod touch
-     iPod2,1 ipod touch 2
-     iPod3,1 ipod touch 3
-     iPod4,1 ipod touch 4
-     //标清
-     iPod5,1 ipod touch 5
-     
-     //iPad
-     iPad1,1 ipad 忽略
-     
-     //高清
-     iPad2,1 ipad 2
-     iPad2,2 ipad 2
-     iPad2,3 ipad 2
-     iPad2,4 ipad 2
-     
-     iPad2,5 ipadmini 1
-     iPad2,6 ipadmini 1
-     iPad2,7 ipadmini 1
-     
-     iPad3,1 ipad 3
-     iPad3,2 ipad 3
-     iPad3,3 ipad 3
-     
-     //超清
-     iPad3,4 ipad 4
-     iPad3,5 ipad 4
-     iPad3,6 ipad 4
-     
-     iPad4,1 ipad air
-     iPad4,2 ipad air
-     iPad4,3 ipad air
-     
-     iPad4,4 ipad mini 2
-     iPad4,5 ipad mini 2
-     iPad4,6 ipad mini 2
-     
-     iPad4,7 ipad mini 3
-     iPad4,8 ipad mini 3
-     iPad4,9 ipad mini 3
-     
-     iPad5,3 ipad air 2
-     iPad5,4 ipad air 2
-     
-     //Simulator
-     iPhone Simulator iPhone Simlator
-     x86_64 iPhone Simulator
-     
-     */
-    //    NSString * device = @"";
-    //    NSRange range = [platform lowercaseString] rangeOfString:@""
-    //    if ([[platform lowercaseString] rangeOfString:@"ipad" options:NSCaseInsensitiveSearch] > 0) {
-    //        device = @"ipad";
-    //    }
-    DeviceVersion dv;
-    return dv;
-}
-
-static DeviceVersion getDevicVersion(){
+FSIOSPlayerDefinitionMode getDefinitionMode(){
     size_t size;
     sysctlbyname("hw.machine", NULL, &size, NULL, 0);
     char *machine = (char *)malloc(size);
     sysctlbyname("hw.machine", machine, &size, NULL, 0);
-    NSString *platform = [NSString stringWithCString:machine encoding:NSUTF8StringEncoding];
+    NSString *platform = [NSString stringWithUTF8String:machine];
     free(machine);
-    DeviceVersion deviceVersion = stringToDeviceVersion(platform);
-    return deviceVersion;
+    
+    NSString *platformLowerString = [platform lowercaseString];
+    if ([platformLowerString isEqualToString:@"ipod1,1"]    // ipod 4,1
+        || [platformLowerString isEqualToString:@"ipod2,1"] //ipod touch 2
+        || [platformLowerString isEqualToString:@"ipod3,1"] //ipod touch 3
+        || [platformLowerString isEqualToString:@"ipod4,1"] //ipod touch 4
+        || [platformLowerString isEqualToString:@"ipad1,1"] //ipad 1
+        || [platformLowerString isEqualToString:@"iphone1,1"] //iphone 3
+        || [platformLowerString isEqualToString:@"iphone1,2"] //iphone 3g
+        || [platformLowerString isEqualToString:@"iphone2,1"] //iphone 3gs
+        )
+    {
+        //ipod 1, 2, 3, 4
+        //iphone 3, 3g, 3gs
+        //ipad 1
+        return FSIOSPlayerDefinitionModeNone;
+        
+    }else if([platformLowerString isEqualToString:@"ipod5,1"]      //ipod touch 5
+             || [platformLowerString isEqualToString:@"iphone3,1"] //iphone 4
+             || [platformLowerString isEqualToString:@"iphone3,2"] //iphone 4
+             || [platformLowerString isEqualToString:@"iphone3,3"] //iphone 4
+             || [platformLowerString isEqualToString:@"iphone4,1"] //iphone 4s
+             )
+    {
+        //ipod touch 5
+        //iphone 4, 4s
+        return FSIOSPlayerDefinitionModeStandard;
+        
+    }else if([platformLowerString isEqualToString:@"ipad2,1"]    //ipad 2
+             || [platformLowerString isEqualToString:@"ipad2,2"] //ipad 2
+             || [platformLowerString isEqualToString:@"ipad2,3"] //ipad 2
+             || [platformLowerString isEqualToString:@"ipad2,4"] //ipad 2
+             || [platformLowerString isEqualToString:@"ipad2,5"] //ipad mini
+             || [platformLowerString isEqualToString:@"ipad2,6"] //ipad mini
+             || [platformLowerString isEqualToString:@"ipad2,7"] //ipad mini
+             || [platformLowerString isEqualToString:@"ipad3,1"] //ipad 3
+             || [platformLowerString isEqualToString:@"ipad3,2"] //ipad 3
+             || [platformLowerString isEqualToString:@"ipad3,3"] //ipad 3
+             )
+    {
+        //ipad 2,3
+        //ipad mini
+        return FSIOSPlayerDefinitionModeHigh;
+    }
+    else{
+        //iphone 5,5c,5s,6,6 plus
+        //ipad 4, air air2
+        //ipad mini 2, mini 3
+        //ios simulator
+        return FSIOSPlayerDefinitionModeSuper;
+    }
 }
-
+@end
 

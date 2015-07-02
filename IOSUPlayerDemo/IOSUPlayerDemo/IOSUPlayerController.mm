@@ -10,6 +10,7 @@
 #import <MediaPlayer/MPVolumeView.h>
 #import "uerror_code.h"
 
+#define APPFORITUNES  (false)
 #define IsAtLeastiOSVersion(X) ([[[UIDevice currentDevice] systemVersion] compare:X options:NSNumericSearch] != NSOrderedAscending)
 @interface  IOSUPlayerController ()
 {
@@ -31,12 +32,16 @@
     UIBarButtonItem     *_repeatModeBtn;
     UIBarButtonItem     *_fullscreenBtn;
     UIBarButtonItem     *_destroyBtn;
+
     
     UIView              *_airPlayeBtn;
     UIView              *_extraView;
     MPVolumeView        *_volumeView;
+    MPVolumeView        *_voiceView;
+    UIBarButtonItem     *_voiceBtn;
     
     UIView              *_topHUD;
+    UIView              *_botHUD;
     
     UILabel             *_leftLabel;
     UISlider            *_progressSlider;
@@ -51,6 +56,7 @@
     FSIOSPlayer *_player;
     BOOL        _enableHevc;
     BOOL        _enableHardDecoder;
+    NSString    *_uurl;
     
     
 }
@@ -69,6 +75,10 @@
 
 -(id)initWithContentURL:(NSString *)url withEnableHevc:(BOOL)enableHevc withHardDecoder:(BOOL)sign
 {
+    
+    getDefinitionMode();
+    
+    _uurl = url;
     _enableHevc = enableHevc;
     _enableHardDecoder = sign;
     self = [super init];
@@ -160,6 +170,10 @@
         
     }
     
+    
+    
+    
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(statusBarOrientationDidChange:)
                                                  name:UIApplicationDidChangeStatusBarOrientationNotification
                                                object:nil];
@@ -190,6 +204,7 @@
 #pragma mark - rewrite
 -(void)loadView
 {
+    [super loadView];
     
     [[UIApplication sharedApplication] setStatusBarHidden:YES];
     
@@ -197,7 +212,7 @@
     CGRect bounds = CGRectMake(0, 0, [self getFullScreenSize].width, [self getFullScreenSize].height);
     
     self.view = [[UIView alloc] initWithFrame:bounds];
-    self.view.backgroundColor = [UIColor lightGrayColor];
+    self.view.backgroundColor = [UIColor clearColor];
     self.view.autoresizingMask = UIViewAutoresizingFlexibleTopMargin |
     UIViewAutoresizingFlexibleBottomMargin |
     UIViewAutoresizingFlexibleLeftMargin |
@@ -208,159 +223,49 @@
     CGFloat botH = 50;
     
     
+    [self createDoneButton];
+    [self createHUD:bounds withTopH:topH];
+    [self createLeftLable:topH];
+    [self createRightLable:bounds withTopH:topH];
+    [self createExtraView:bounds];
+    [self createProgressSlider:bounds withTopH:topH];
+    [self createTopBar:bounds withTopH:topH];
+    [self createActivityIndicator];
+    [self createBottomBar:bounds withBotH:botH];
     
-    _doneButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _doneButton.frame = CGRectMake(4, 14, 40, 25);
-    [_doneButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-    [_doneButton setTitle:NSLocalizedString(@"退出", nil) forState:UIControlStateNormal];
-    _doneButton.titleLabel.font = [UIFont systemFontOfSize:12];
-    _doneButton.showsTouchWhenHighlighted = YES;
-    [_doneButton addTarget:self action:@selector(doneDidTouch:) forControlEvents:UIControlEventTouchUpInside];
-    
-    
-    _topHUD    = [[UIView alloc] initWithFrame:CGRectMake(0,0,0,0)];
-    _topHUD.frame = CGRectMake(0, 0, bounds.size.width, topH);
-    _topHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    _topHUD.backgroundColor = [UIColor clearColor];
-    _topHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    [self createTap];
     
     
-    _leftLabel = [[UILabel alloc] initWithFrame:CGRectMake(45, 1, 50, topH)];
-    _leftLabel.backgroundColor = [UIColor clearColor];
-    _leftLabel.opaque = NO;
-    _leftLabel.adjustsFontSizeToFitWidth = NO;
-    _leftLabel.textAlignment = NSTextAlignmentLeft;
-    _leftLabel.textColor = [UIColor blackColor];
-    _leftLabel.text = @"";
-    _leftLabel.font = [UIFont systemFontOfSize:12];
-    _leftLabel.autoresizingMask = UIViewAutoresizingFlexibleRightMargin;
+    [self createPlayBtn];
+    [self createPauseBtn];
+    [self createContentModeBtn];
+    [self createFullscreenBtn];
+    [self createRepeatModeBtn];
+    [self createDestroyBtn];
+    [self createSpaceItem];
+    [self createVoiceItem];
     
-    _extraView = [[UIView alloc] initWithFrame:bounds];
-    _extraView.backgroundColor = [UIColor clearColor];
-    _extraView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+#if APPFORITUNES
+    [_bottomBar setItems:@[_spaceItem, _playBtn, _spaceItem, _voiceBtn, _spaceItem] animated:NO];
+#else
+    [_bottomBar setItems:@[_spaceItem, _playBtn,
+                           _spaceItem,
+                           _contentModeBtn, _spaceItem, _repeatModeBtn,
+                           _spaceItem, _fullscreenBtn, _spaceItem, _destroyBtn,
+                           _spaceItem,] animated:NO];
+#endif
     
+    [self.view addSubview:_extraView];
+    [_extraView addGestureRecognizer:_tap];
+    [_extraView addSubview:_topBar];
+    [_extraView addSubview:_bottomBar];
     
-    _rightLabel = [[UILabel alloc] initWithFrame:CGRectMake(bounds.size.width - 55, 1, 50, topH)];
-    _rightLabel.backgroundColor = [UIColor clearColor];
-    _rightLabel.opaque = NO;
-    _rightLabel.adjustsFontSizeToFitWidth = NO;
-    _rightLabel.textAlignment = NSTextAlignmentLeft;//NSTextAlignmentLeft;
-    _rightLabel.textColor = [UIColor blackColor];
-    _rightLabel.text = @"";
-    _rightLabel.font = [UIFont systemFontOfSize:12];
-    _rightLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
-    
-    
-    _progressSlider = [[UISlider alloc] initWithFrame:CGRectMake(100, 2, bounds.size.width - 160, topH)];
-    _progressSlider.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    _progressSlider.continuous = NO;
-    _progressSlider.value = 0;
-    [_progressSlider addTarget:self action:@selector(progressDidChange:) forControlEvents:UIControlEventValueChanged];
-    
-    _topBar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, bounds.size.width, topH)];
-    _topBar.backgroundColor = [UIColor darkGrayColor];
-    _topBar.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleWidth;
-    
-    /************************************************************************************************************/
-    
-    _activityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle: UIActivityIndicatorViewStyleWhiteLarge];
-    _activityIndicator.center = self.view.center;
-    _activityIndicator.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
-    
-    [self.view addSubview:_activityIndicator];
-    
-    
-    /************************************************************************************************************/
-    CGFloat width = bounds.size.width;
-    CGFloat height = bounds.size.height;
-    _bottomBar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, height-botH, width, botH)];
-    _bottomBar.backgroundColor = [UIColor darkGrayColor];
-    _bottomBar.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
-    
-    _rewindBtn = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRewind
-                                                               target:self
-                                                               action:@selector(rewindTouch:)];
-    _rewindBtn.width = 25;
-    
-    _playBtn = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemPlay
-                                                             target:self
-                                                             action:@selector(playTouch:)];
-    
-    
-    _pauseBtn = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemPause
-                                                              target:self
-                                                              action:@selector(pauseTouch:)];
-    _playBtn.width = 25;
-    
-    
-    _forwardBtn = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFastForward
-                                                                target:self
-                                                                action:@selector(forwardTouch:)];
-    _forwardBtn.width = 25;
-    
-    
-    _contentModeBtn = [[UIBarButtonItem alloc] initWithTitle:@"裁边"
-                                                       style:UIBarButtonItemStyleDone
-                                                      target:self
-                                                      action:@selector(contentModeTouch:)];
-    
-    _contentModeBtn.width = 25;
-    
-    
-    _fullscreenBtn = [[UIBarButtonItem alloc] initWithTitle:@"全屏"
-                                                      style:UIBarButtonItemStyleDone
-                                                     target:self
-                                                     action:@selector(fullscreenTouch:)];
-    _fullscreenBtn.width = 25;
-    
-    _repeatModeBtn = [[UIBarButtonItem alloc] initWithTitle:@"循环"
-                                                      style:UIBarButtonItemStyleDone
-                                                     target:self
-                                                     action:@selector(repeatModeTouch:)];
-    _repeatModeBtn.width = 25;
-    
-    
-    _destroyBtn = [[UIBarButtonItem alloc] initWithTitle:@"销毁"
-                                                      style:UIBarButtonItemStyleDone
-                                                     target:self
-                                                     action:@selector(destroyTouch:)];
-    _destroyBtn.width = 25;
-    
-    
-    
-    _spaceItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
-                                                               target:nil
-                                                               action:nil];
-    
-    
-    _airPlayeBtn = [self createAirplayBtn];
-    
-//    [self.view addSubview:_airPlayeBtn];
-    
-    _tap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(tapOperation)];
-    _tap.numberOfTapsRequired = 2;
-    _tap.numberOfTouchesRequired = 2;
-    
-    
+    [_topBar addSubview:_topHUD];
     [_topHUD addSubview:_doneButton];
     [_topHUD addSubview:_progressSlider];
     [_topHUD addSubview:_leftLabel];
     [_topHUD addSubview:_rightLabel];
-    [_topBar addSubview:_topHUD];
     
-    [self.view addSubview:_extraView];
-    [_extraView addGestureRecognizer:_tap];
-    [_extraView addSubview:_bottomBar];
-    [_extraView addSubview:_topBar];
-    [_bottomBar setItems:@[_spaceItem, _rewindBtn, _spaceItem, _playBtn,
-                           _spaceItem, _forwardBtn, _spaceItem,
-                           _contentModeBtn, _spaceItem, _repeatModeBtn,
-                           _spaceItem, _fullscreenBtn, _spaceItem, _destroyBtn,
-                           _spaceItem,] animated:NO];
-    
-    _topBar.backgroundColor = [UIColor orangeColor];
-    _bottomBar.backgroundColor = [UIColor redColor];
-    self.view.backgroundColor = [UIColor blackColor];
     
     [self setUIViewShow];
     
@@ -387,18 +292,196 @@
 
 -(void)viewWillDisappear:(BOOL)animated
 {
+    [super viewWillDisappear:animated];
     NSLog(@"viewWillDisappear");
 }
 
 
 -(void)viewDidDisappear:(BOOL)animated
 {
+    [super viewDidDisappear:animated];
     NSLog(@"viewDidDisappear");
 }
 
 -(void)viewDidAppear:(BOOL)animated
 {
+    [super viewDidAppear:animated];
     NSLog(@"viewDidAppear");
+}
+
+#pragma mark - Component created
+
+-(void)createDoneButton{
+    _doneButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _doneButton.frame = CGRectMake(4, 14, 40, 25);
+    [_doneButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    [_doneButton setTitle:NSLocalizedString(@"退出", nil) forState:UIControlStateNormal];
+    _doneButton.titleLabel.font = [UIFont systemFontOfSize:12];
+    _doneButton.showsTouchWhenHighlighted = YES;
+    [_doneButton addTarget:self action:@selector(doneDidTouch:) forControlEvents:UIControlEventTouchUpInside];
+}
+
+-(void)createHUD:(CGRect)bounds withTopH:(CGFloat)topH{
+    _topHUD    = [[UIView alloc] initWithFrame:CGRectMake(0,0,0,0)];
+    _topHUD.frame = CGRectMake(0, 0, bounds.size.width, topH);
+    _topHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    _topHUD.backgroundColor = [UIColor lightGrayColor];
+    _topHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+}
+
+-(void)createLeftLable:(CGFloat)topH{
+    _leftLabel = [[UILabel alloc] initWithFrame:CGRectMake(45, 1, 50, topH)];
+    _leftLabel.backgroundColor = [UIColor clearColor];
+    _leftLabel.opaque = NO;
+    _leftLabel.adjustsFontSizeToFitWidth = NO;
+    _leftLabel.textAlignment = NSTextAlignmentLeft;
+    _leftLabel.textColor = [UIColor blackColor];
+    _leftLabel.text = @"";
+    _leftLabel.font = [UIFont systemFontOfSize:12];
+    _leftLabel.autoresizingMask = UIViewAutoresizingFlexibleRightMargin;
+}
+
+-(void)createRightLable:(CGRect)bounds withTopH:(CGFloat)topH{
+    _rightLabel = [[UILabel alloc] initWithFrame:CGRectMake(bounds.size.width - 55, 1, 50, topH)];
+    _rightLabel.backgroundColor = [UIColor clearColor];
+    _rightLabel.opaque = NO;
+    _rightLabel.adjustsFontSizeToFitWidth = NO;
+    _rightLabel.textAlignment = NSTextAlignmentLeft;//NSTextAlignmentLeft;
+    _rightLabel.textColor = [UIColor blackColor];
+    _rightLabel.text = @"";
+    _rightLabel.font = [UIFont systemFontOfSize:12];
+    _rightLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+}
+
+-(void)createExtraView:(CGRect)bounds{
+    _extraView = [[UIView alloc] initWithFrame:bounds];
+    _extraView.backgroundColor = [UIColor clearColor];
+    _extraView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+}
+
+-(void)createPlayBtn{
+    UIImage *playImage = [UIImage imageNamed:@"playerPlay1"];
+    UIButton *playBtn1 = [UIButton buttonWithType:UIButtonTypeCustom];
+    playBtn1.frame = CGRectMake(0, 0, 18, 23);
+    playBtn1.showsTouchWhenHighlighted = YES;
+    [playBtn1 setBackgroundImage:playImage forState:UIControlStateNormal];
+    [playBtn1 addTarget:self action:@selector(playTouch:) forControlEvents:UIControlEventTouchUpInside];
+    _playBtn = [[UIBarButtonItem alloc] initWithCustomView:playBtn1];
+}
+
+-(void)createPauseBtn{
+//    UIImage *pauseImage = [UIImage imageNamed:@"playerPause"];
+    UIImage *pauseImage = [UIImage imageNamed:@"playerPause1"];
+    UIButton *pauseBtn1 = [UIButton buttonWithType:UIButtonTypeCustom];
+    pauseBtn1.frame = CGRectMake(0, 0, 17, 23);
+    [pauseBtn1 setBackgroundImage:pauseImage forState:UIControlStateNormal];
+    pauseBtn1.showsTouchWhenHighlighted = YES;
+    [pauseBtn1 addTarget:self action:@selector(pauseTouch:) forControlEvents:UIControlEventTouchUpInside];
+    _pauseBtn = [[UIBarButtonItem alloc] initWithCustomView:pauseBtn1];
+}
+
+-(void)createVoiceItem{
+    _voiceView = [[MPVolumeView alloc] initWithFrame:CGRectMake(0, 0, 200, 20)];
+    for(UIView *view in [_voiceView subviews]){
+        if([[[view class] description] isEqualToString:@"MPVolumeSlider"]){
+            UISlider *slider = (UISlider *)view;
+            slider.backgroundColor = [UIColor clearColor];
+            slider.minimumTrackTintColor = [UIColor blackColor];
+            [slider setThumbImage:[UIImage imageNamed:@"playerSlider"] forState:UIControlStateHighlighted];
+            [slider setThumbImage:[UIImage imageNamed:@"playerSlider"] forState:UIControlStateNormal];
+//            slider.value = 0.1;
+        }
+    }
+    _voiceBtn = [[UIBarButtonItem alloc] initWithCustomView:_voiceView];
+}
+
+-(void) createProgressSlider:(CGRect)bounds withTopH:(CGFloat)topH{
+    
+//    CGRect bounds = CGRectMake(0, 0, [self getFullScreenSize].width, [self getFullScreenSize].height);
+    _progressSlider = [[UISlider alloc] initWithFrame:CGRectMake(100, 2, bounds.size.width - 160, topH)];
+    _progressSlider.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    _progressSlider.continuous = NO;
+    _progressSlider.value = 0;
+    _progressSlider.backgroundColor = [UIColor clearColor];
+    _progressSlider.minimumTrackTintColor = [UIColor blackColor];
+    [_progressSlider setThumbImage:[UIImage imageNamed:@"playerSlider"] forState:UIControlStateHighlighted];
+    [_progressSlider setThumbImage:[UIImage imageNamed:@"playerSlider"] forState:UIControlStateNormal];
+//    _progressSlider.maximumTrackTintColor = [UIColor whiteColor];
+//    _progressSlider.thumbTintColor = [UIColor orangeColor];
+    [_progressSlider addTarget:self action:@selector(progressDidChange:) forControlEvents:UIControlEventValueChanged];
+}
+
+-(void)createTopBar:(CGRect)bounds withTopH:(CGFloat)topH{
+    _topBar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, bounds.size.width, topH)];
+    _topBar.backgroundColor = [UIColor lightGrayColor];
+    _topBar.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleWidth;
+}
+
+-(void)createActivityIndicator{
+    _activityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle: UIActivityIndicatorViewStyleWhiteLarge];
+    _activityIndicator.center = self.view.center;
+    _activityIndicator.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
+    [self.view addSubview:_activityIndicator];
+
+}
+
+-(void)createBottomBar:(CGRect)bounds withBotH:(CGFloat)botH{
+    CGFloat width = bounds.size.width;
+    CGFloat height = bounds.size.height;
+    _bottomBar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, height-botH, width, botH)];
+    _botHUD = [[UIView alloc] initWithFrame:CGRectMake(0, 0, _bottomBar.frame.size.width, _bottomBar.frame.size.height)];
+    _botHUD.backgroundColor = [UIColor lightGrayColor];
+    _botHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    [_bottomBar insertSubview:_botHUD atIndex:0];
+    _bottomBar.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
+//    _bottomBar.alpha = 0.33;
+//    _bottomBar.backgroundColor = [UIColor redColor];
+}
+
+-(void)createTap{
+    _tap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(tapOperation)];
+    _tap.numberOfTapsRequired = 2;
+    _tap.numberOfTouchesRequired = 2;
+}
+
+-(void)createContentModeBtn{
+    _contentModeBtn = [[UIBarButtonItem alloc] initWithTitle:@"裁边"
+                                                       style:UIBarButtonItemStyleDone
+                                                      target:self
+                                                      action:@selector(contentModeTouch:)];
+    
+    _contentModeBtn.width = 40;
+}
+
+-(void)createFullscreenBtn{
+    _fullscreenBtn = [[UIBarButtonItem alloc] initWithTitle:@"全屏"
+                                                      style:UIBarButtonItemStyleDone
+                                                     target:self
+                                                     action:@selector(fullscreenTouch:)];
+    _fullscreenBtn.width = 40;
+}
+
+-(void)createRepeatModeBtn{
+    _repeatModeBtn = [[UIBarButtonItem alloc] initWithTitle:@"循环"
+                                                      style:UIBarButtonItemStyleDone
+                                                     target:self
+                                                     action:@selector(repeatModeTouch:)];
+    _repeatModeBtn.width = 40;
+}
+
+-(void)createDestroyBtn{
+    _destroyBtn = [[UIBarButtonItem alloc] initWithTitle:@"销毁"
+                                                   style:UIBarButtonItemStyleDone
+                                                  target:self
+                                                  action:@selector(destroyTouch:)];
+    _destroyBtn.width = 40;
+}
+
+
+-(void)createSpaceItem{
+    _spaceItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+                                                               target:nil
+                                                               action:nil];
 }
 
 #pragma mark - Touch
@@ -408,7 +491,7 @@
     [self appWillEnterBackGroundActionOrDoneDidTouch];
     
     if (self.presentingViewController || !self.navigationController)
-        [self dismissViewControllerAnimated:YES completion:nil];
+        [self dismissViewControllerAnimated:NO completion:nil];
     else
         [self.navigationController popViewControllerAnimated:YES];
 }
@@ -490,6 +573,22 @@
     [self appWillEnterBackGroundActionOrDoneDidTouch];
     _leftLabel.hidden = YES;
     _rightLabel.hidden = YES;
+    
+    
+//    [self appWillEnterBackGroundActionOrDoneDidTouch];
+//    
+//    if (self.presentingViewController || !self.navigationController)
+//        [self dismissViewControllerAnimated:YES completion:nil];
+//    else
+//        [self.navigationController popViewControllerAnimated:YES];
+//    
+//    
+//    
+//    IOSUPlayerController *playerController = [[IOSUPlayerController alloc]
+//                                              initWithContentURL:_uurl withEnableHevc:_enableHevc withHardDecoder:NO];
+//    [self presentViewController:playerController animated:YES completion:nil];
+    
+    
 }
 
 -(void)repeatModeTouch:(id)sender{
@@ -535,6 +634,7 @@
         _hidden = NO;
         _progressSlider.hidden = NO;
         _bottomBar.hidden = NO;
+        _rightLabel.hidden = NO;
         _leftLabel.text = formatTimeInterval(0, NO);
 //        [[[_player.view subviews] objectAtIndex:0] addGestureRecognizer:_tap];
 //        [self.view addGestureRecognizer:_tap];
@@ -679,19 +779,31 @@
     }
     
     NSLog(@"playbackDidFinish: %@", info);
-    if (MPMovieFinishReasonPlaybackError == reason ) {
-        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:
-                                  NSLocalizedString(@"play", nil)
-                                                            message:info
-                                                           delegate:nil
-                                                  cancelButtonTitle:NSLocalizedString(@"Close", nil)
-                                                  otherButtonTitles:nil];
-        
-        [alertView show];
-    }
+//    if (MPMovieFinishReasonPlaybackError == reason || MPMovieFinishReasonPlaybackEnded == reason) {
+//        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:
+//                                  NSLocalizedString(@"play", nil)
+//                                                            message:info
+//                                                           delegate:nil
+//                                                  cancelButtonTitle:NSLocalizedString(@"Close", nil)
+//                                                  otherButtonTitles:nil];
+//        
+//        [alertView show];
+//    }
 }
 
 -(void)playbackStateChange:(NSNotification *)notification{
+    
+#if APPFORITUNES
+    UIBarButtonItem *playPauseBtn = nil;
+    NSLog(@"");
+    if (_player.playbackState == MPMoviePlaybackStatePaused) {
+        playPauseBtn = _playBtn;
+    }else{
+        playPauseBtn = _pauseBtn;
+    }
+    [_bottomBar setItems:@[_spaceItem, playPauseBtn, _spaceItem, _voiceBtn,_spaceItem] animated:NO];
+#endif
+    
     switch (_player.playbackState) {
         case MPMoviePlaybackStateInterrupted:
             NSLog(@"Observer MPMoviePlaybackStateInterrupted");
@@ -736,7 +848,10 @@
 
 -(void)statusBarOrientationDidChange:(NSNotification *)notification{
     CGSize size = [self getFullScreenSize];
-    _player.view.frame = CGRectMake(0, 0, size.width, size.height);
+    if (_enableHardDecoder) {
+         _player.view.frame = CGRectMake(0, 0, size.width, size.height);
+    }
+   
 }
 
 -(void)readyForDisplayDidChanged:(NSNotification *)notification{
@@ -782,8 +897,8 @@
     _player.contentURL = _url;
     [_player setFullscreen:YES animated:YES];
     _player.shouldAutoplay = YES;
-    _player.initialPlaybackTime = 0;
-    _player.endPlaybackTime = 0;
+//    _player.initialPlaybackTime = 20;
+//    _player.endPlaybackTime = 30;
     [_player prepareToPlay];
     [self.view insertSubview:_player.view atIndex:0];
 //    [self.view addGestureRecognizer:_tap];
@@ -794,9 +909,10 @@
 {
     [self setUIViewShow];
     
-    if (_progressTimer) {
+    if ([_progressTimer isValid]) {
         [_progressTimer invalidate];
         _progressTimer = nil;
+        NSLog(@"_progressTimer_progressTimer_progressTimer: %@", _progressTimer);
     }
     [_player stop];
     _player = nil;
@@ -822,23 +938,33 @@
     
     //更新按钮操作
     [self updateBottomBar];
+//    NSLog(@"rightLabel: %s", _rightLabel.hidden ? "yes" : "no");
 }
 
 -(void)updateBottomBar
 {
+#if !APPFORITUNES
+//    UIBarButtonItem *playPauseBtn = nil;
+//    if (_player.playbackState == MPMoviePlaybackStatePaused) {
+//        playPauseBtn = _playBtn;
+//    }else{
+//        playPauseBtn = _pauseBtn;
+//    }
+//    [_bottomBar setItems:@[_spaceItem, playPauseBtn, _spaceItem, _voiceBtn,_spaceItem] animated:NO];
+//#else
     UIBarButtonItem *playPauseBtn = nil;
     if (_player.playbackState == MPMoviePlaybackStatePaused) {
         playPauseBtn = _playBtn;
     }else{
         playPauseBtn = _pauseBtn;
     }
-    
-    [_bottomBar setItems:@[_spaceItem, _rewindBtn, _spaceItem, playPauseBtn,
-                           _spaceItem, _forwardBtn, _spaceItem,
+    [_bottomBar setItems:@[_spaceItem, playPauseBtn,
+                           _spaceItem,
                            _contentModeBtn, _spaceItem,
                            _repeatModeBtn, _spaceItem,
                            _fullscreenBtn, _spaceItem,
                            _destroyBtn, _spaceItem] animated:YES];
+#endif
     
 }
 
@@ -881,7 +1007,7 @@ static NSString * formatTimeInterval(CGFloat seconds, BOOL isLeft)
 
 
 -(void)willEnterFullScreen:(NSNotification *)notification{
-//    sleep(4);
+//    sleep(10);
     NSLog(@"==========willEnterFullScreen");
 }
 
@@ -913,7 +1039,9 @@ static NSString * formatTimeInterval(CGFloat seconds, BOOL isLeft)
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     NSLog(@"%@ dealloc FspPlayerController", self);
     
-    [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+    [_extraView removeFromSuperview];
+    _extraView = nil;
+//    [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
 }
 
 

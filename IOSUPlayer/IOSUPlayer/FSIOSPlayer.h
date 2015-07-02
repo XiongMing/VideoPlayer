@@ -17,7 +17,7 @@ MP_EXTERN NSString * const MPMoviePlayerPlaybackErrorCodeInfoKey;
 @class FSIOSPlayer;
 
 typedef NS_ENUM(NSInteger, FSIOSPlayerDefinitionMode) {
-    FSIOSPlayerDefinitionModeNone,
+    FSIOSPlayerDefinitionModeNone,      //not support 265
     FSIOSPlayerDefinitionModeSmooth,
     FSIOSPlayerDefinitionModeStandard,
     FSIOSPlayerDefinitionModeHigh,
@@ -131,9 +131,6 @@ typedef NS_ENUM(NSInteger, FSIOSPlayerDefinitionMode) {
 // The end time of movie playback. Defaults to NaN, which indicates natural end time of the movie.
 @property (nonatomic, readwrite) NSTimeInterval endPlaybackTime;
 
-// Returns YES if the first video frame has been made ready for display for the current item.
-// Will remain NO for items that do not have video tracks associated.
-@property (nonatomic, readonly) BOOL readyForDisplay;
 
 // The current playback rate of the now playing item. Default is 1.0 (normal speed).
 // Pausing will set the rate to 0.0. Setting the rate to non-zero implies playing.
@@ -155,12 +152,14 @@ typedef NS_ENUM(NSInteger, FSIOSPlayerDefinitionMode) {
 // The style of the playback controls. Defaults to MPMovieControlStyleDefault.
 @property (nonatomic) MPMovieControlStyle controlStyle;
 
+// Returns YES if the first video frame has been made ready for display for the current item.
+// Will remain NO for items that do not have video tracks associated.
+@property (nonatomic, readonly) BOOL readyForDisplay;
+
 @property (nonatomic, readwrite) BOOL enableHevcOptimization;
 
 @end
 
-FSIOSPlayerDefinitionMode getAVClarity();
-
-
+FSIOSPlayerDefinitionMode getDefinitionMode();
 
 

@@ -28,7 +28,57 @@ void UDecoderAudio::process(av_link pkt) {
 		ulog_info("UDecoderAudio::process avcodec_flush_buffers");
 		return;
 	}
+    
 
+#if PLATFORM_DEF == IOS_PLATFORM
+    AVPacket pkt1 = (*((AVPacket *)pkt->item));
+    while (pkt1.size > 0) {
+        int len = avcodec_decode_audio4(mPlayer->mMediaFile->streams[mPlayer->mAudioStreamIndex]->codec, mPlayer->mAudioDecFrame, &completed, &pkt1);
+        if(len < 0 )
+            break;
+        
+        pkt1.data += len;
+        pkt1.size -= len;
+        
+        if (!completed)
+            continue;
+        
+        size = mPlayer->mAudioDecFrame->channels * mPlayer->mAudioDecFrame->nb_samples * av_get_bytes_per_sample(sample_fmt);
+        //针对采样精度不是AV_SAMPLE_FMT_S16的情况，对其进行重新采样
+        init_swr(mPlayer->mAudioDecFrame);
+        if (sample_fmt != AV_SAMPLE_FMT_S16 || 2 != channels) {
+            size_out = swr_convert(mPlayer->mResampleEngine,
+                                   (uint8_t**) mPlayer->mAudioFrame->data,
+                                   mPlayer->mAudioDecFrame->nb_samples,
+                                   (const uint8_t **) mPlayer->mAudioDecFrame->data,
+                                   mPlayer->mAudioDecFrame->nb_samples);
+            
+            size_out = size_out * 2 * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
+            //ulog_info("swr_convert.size_out=%d,mPlayer->mAudioDecFrame->nb_samples=%d",size_out,mPlayer->mAudioDecFrame->nb_samples);
+            size = size_out;
+            
+        }
+        
+        while (true) {
+            //这里如果一个包里面含有多帧，防止出现死锁，原因我用读写锁进行同步，如果多帧没有多余的pcm空槽可用，判断
+            //如果是快进或则是stop状态直接返回，目的是尽快释放读锁进入快进操作
+            if (mPlayer->mPCMSlotQueue->size() != 0)    break;
+            if (mPlayer->mIsSeeking || mPlayer->isStop())    return;
+            usleep(UPLAYER_PAUSE_TIME);
+        } 
+        
+        pcm_pkt = (av_link) mPlayer->mPCMSlotQueue->get();
+        if (!pcm_pkt) {
+            ulog_err("UDecoderAudio::process mPCMSlotQueue->get() == NULL");
+            return;
+        }
+        pcm_pkt->item = mPlayer->mAudioFrame->data[0];
+        pcm_pkt->size = size;
+        mPlayer->mPCMQueue->put(pcm_pkt);
+    }
+    
+#else
+    
 	//音频解码
 	avcodec_decode_audio4(mPlayer->mMediaFile->streams[mPlayer->mAudioStreamIndex]->codec, mPlayer->mAudioDecFrame, &completed, (AVPacket*)pkt->item);
 	size = mPlayer->mAudioDecFrame->channels * mPlayer->mAudioDecFrame->nb_samples * av_get_bytes_per_sample(sample_fmt);
@@ -64,6 +114,7 @@ void UDecoderAudio::process(av_link pkt) {
 	pcm_pkt->size = size;
 	//将PCM包放到播放队列
 	mPlayer->mPCMQueue->put(pcm_pkt);
+#endif
 }
 void UDecoderAudio::updateCurrentPosition(av_link pkt) {
 
@@ -74,15 +125,23 @@ void UDecoderAudio::updateCurrentPosition(av_link pkt) {
 	if (flag = !flag)
 		return;
 
+#if PLATFORM_DEF == IOS_PLATFORM
+    if (AV_NOPTS_VALUE == packet->pts){
+        if (AV_NOPTS_VALUE != packet->dts) {
+            packet->pts = packet->dts;
+        }
+    }
+#endif
+
 	//计算音频时间戳
 	if (AV_NOPTS_VALUE == packet->pts) {
 		ulog_err("UDecoderAudio::update_pts AV_NOPTS_VALUE == packet->pts");
-		pts = 0;
+        pts = 0;
 	} else {
 
 
 		pts = packet->pts;
-        
+
 		// modified by bruce
 		//if(mPlayer->mStreamType & UPLAYER_STREAM_AUDIO)
 		pts *= av_q2d(mPlayer->mTimeBase[mPlayer->mPtsStreamIndex]);
@@ -92,22 +151,16 @@ void UDecoderAudio::updateCurrentPosition(av_link pkt) {
 	}
 	//ulog_info("CurrentPostion=%f",(double)pts);
 	//更新进度条
-    
-#if PLATFORM_DEF != IOS_PLATFORM
 	if(!mPlayer->isSeeking()){
-#endif
 		mPlayer->setCurrentPosition(pts);
 #if PLATFORM_DEF == IOS_PLATFORM
         //保证不管是刚开始播放还是快进的时候，解码完第一帧音频后，视频才能显示，做音视频同步
         if(!mPlayer->mFirstAudioPacketDecoded){
             mPlayer->mFirstAudioPacketDecoded = true;
-            ulog_info("audio=============================%f",(double)pts);
         }
         mPlayer->mAudioDecodedPts = pts;
 #endif
-#if PLATFORM_DEF != IOS_PLATFORM
 	}
-#endif
 }
 void UDecoderAudio::decode() {
 
@@ -116,6 +169,14 @@ void UDecoderAudio::decode() {
 	ulog_info("UDecoderAudio::decode enter");
 	while (!mPlayer->isStop()) {
     
+
+#if PLATFORM_DEF == IOS_PLATFORM
+        if (!(mPlayer->mStreamType & UPLAYER_STREAM_AUDIO)) {
+            usleep(UPLAYER_PAUSE_TIME);
+            continue;
+        }
+#endif
+
 #if PLATFORM_DEF != IOS_PLATFORM
         if (mPlayer->isPause()) {
             usleep(UPLAYER_PAUSE_TIME);
@@ -195,8 +256,16 @@ void UDecoderAudio::stop() {
 void UDecoderAudio::init_swr(AVFrame* frame){
 
 	if(!mPlayer->mResampleEngine){
-
-		mPlayer->mResampleEngine = swr_alloc_set_opts(NULL,AV_CH_LAYOUT_STEREO,AV_SAMPLE_FMT_S16,frame->sample_rate,frame->channel_layout,(enum AVSampleFormat)mPlayer->mSampleFmt,frame->sample_rate,0,0);
+#if PLATFORM_DEF == IOS_PLATFORM
+        uint64_t src_channel_layout =
+        frame->channel_layout && av_frame_get_channels(frame) == av_get_channel_layout_nb_channels(frame->channel_layout) ?
+        frame->channel_layout :
+        av_get_default_channel_layout(av_frame_get_channels(frame));
+		mPlayer->mResampleEngine = swr_alloc_set_opts(NULL,AV_CH_LAYOUT_STEREO,AV_SAMPLE_FMT_S16,
+                                                      frame->sample_rate,src_channel_layout,(enum AVSampleFormat)mPlayer->mSampleFmt,frame->sample_rate,0,0);
+#else
+        mPlayer->mResampleEngine = swr_alloc_set_opts(NULL,AV_CH_LAYOUT_STEREO,AV_SAMPLE_FMT_S16,frame->sample_rate,frame->channel_layout,(enum AVSampleFormat)mPlayer->mSampleFmt,frame->sample_rate,0,0);
+#endif
 
 		ulog_info("swr_alloc_set_opts");
 		if(!mPlayer->mResampleEngine){

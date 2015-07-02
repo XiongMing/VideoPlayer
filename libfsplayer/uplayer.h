@@ -275,7 +275,21 @@ public:
      */
     void setEndPlaybackTime(int64_t endPlayBackTime) { mEndPlaybackTime = endPlayBackTime;}
     void setRenderVideo(bool shown);
-    bool getFirstVideoFramePrepared() { return mIsFirstVideoFramePrepared; }
+    
+    
+    /**
+     * @brief   判断是否播放完成
+     * @author  eric
+     * @return  true is over
+     */
+    //bool playOver(int64_t cur_pos);
+    /**
+     * @brief   判断是否接近播放完成
+     * @author  HuangWeiqing
+     * @audioOrVideo video->true, audio->false
+     * @return  true is over
+     */
+    bool playOver2(int64_t cur_pos, bool audioOrVieo);
 #endif
 private:
 	/**
@@ -828,8 +842,8 @@ public:
         
         
 #if PLATFORM_DEF == IOS_PLATFORM
-    private:
-        bool mRepeatMode;
+private:
+    bool mRepeatMode;
     int64_t mEndPlaybackTime;
     int64_t mLastPacketPts;
     bool    mIsFlush;
@@ -848,9 +862,23 @@ public:
     int    mPreparedDone;
     
     /*
-     *用于标示影片开始播放，和seek操作后是否解码第一帧数据
+     保存首次进入播放器或者快进操作后的第一帧视频帧数据
      */
-    bool    mIsFirstVideoFramePrepared;
+    bool    mFirstVideoFrameDecoded;
+    
+    /*
+     有可能影片的第一帧pts不是从0开始，保存第一帧数据得pts
+     */
+    int64_t  mAStartTime;
+    int64_t  mVStartTime;
+    
+    bool    mAudioOrVideo;
+    bool    mEof;
+    
+    int mVideoSlotQueueNum;
+    int mAudioSlotQueueNum;
+    int mMinBufferingQueueNum;
+    int mMaxBufferingQueueNum;
     
 #endif
 };

@@ -24,17 +24,14 @@ URendererVideo::URendererVideo(UPlayer* player) :mPlayer(player),
 	bzero(mLastFrame,sizeof(*mLastFrame));
             
 #if PLATFORM_DEF == IOS_PLATFORM
-    mFirstFrame = (av_link)av_malloc(sizeof(*mFirstFrame));
-    bzero(mFirstFrame,sizeof(*mFirstFrame));
-            
-    mLockRenderVideo = new ULock(ULOCK_TYPE_NORMAL);
-    if (!mLockRenderVideo) {
-        ulog_err("URendererVideo::mLockRenderVideo error");
-        return;
-    }
-    mLockRenderVideo->lock();
-    mRenderVideo = true;
-    mLockRenderVideo->unlock();
+            mLockRenderVideo = new ULock(ULOCK_TYPE_NORMAL);
+            if (!mLockRenderVideo) {
+                ulog_err("URendererVideo::mLockRenderVideo error");
+                return;
+            }
+            mLockRenderVideo->lock();
+            mRenderVideo = true;
+            mLockRenderVideo->unlock();
 #endif
 }
 
@@ -83,32 +80,51 @@ void URendererVideo::render() {
 	int64_t last_time = 0;
 
 	ulog_info("URendererVideo::render enter");
-
+#if PLATFORM_DEF != IOS_PLATFORM
 	//单位微秒
 	mFrameInterval = 1000000/mPlayer->mFrameRate;
 
 	//创建绘图对象
 	refreshEGL();
+#else
+    bool initialized = false;
+#endif
 
 	ulog_info("openGL width:%d height:%d\n",mPlayer->mVideoWidth,mPlayer->mVideoHeight);
 
 	while (!mPlayer->isStop()) {
 
+        
 #if PLATFORM_DEF == IOS_PLATFORM
+        
+        if (!(mPlayer->mStreamType & UPLAYER_STREAM_VIDEO)) {
+            usleep(UPLAYER_PAUSE_TIME);
+            continue;
+        }
+        
+        if (!initialized) {
+            mFrameInterval = 1000000/mPlayer->mFrameRate;
+            
+            //创建绘图对象
+            refreshEGL();
+            
+            initialized = true;
+        }
+        
         /*当前没有播放器结束并且没有发送缓冲开始消息并且
          如果视频或者音频的缓冲队列少于UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM就
          发送缓冲开始消息 Add by HuangWeiqing
          */
-        if (!mPlayer->playOver2(mPlayer->mLastPacketPts) && !mPlayer->mNeedBufferring
-            && (mPlayer->mVPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM
-                ||((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM))) {
-                showLastFrame();
-                mPlayer->mNeedBufferring = true;
-                mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_START);
-                usleep(UPLAYER_PAUSE_TIME);
-                ulog_info("MEDIA_INFO_BUFFERING_START in renderer_video.cpp");
-                continue;
-            }
+//        if (!mPlayer->playOver2(mPlayer->mLastPacketPts) && !mPlayer->mNeedBufferring
+//            && (mPlayer->mVPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM
+//                ||((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM))) {
+//                showLastFrame();
+//                mPlayer->mNeedBufferring = true;
+//                mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_START);
+//                usleep(UPLAYER_PAUSE_TIME);
+//                ulog_info("MEDIA_INFO_BUFFERING_START in renderer_video.cpp");
+//                continue;
+//            }
         
         /*
          当前没有播放器结束并且没有发送缓冲开始消息并且
@@ -116,9 +132,9 @@ void URendererVideo::render() {
          又或者如果是首次启动或seek操作后，如果mYUVSlotQueue还有空槽（要保证空槽用完）
          发送缓冲开始消息 Add by HuangWeiqing
          */
-        if (!mPlayer->playOver2(mPlayer->mLastPacketPts) && !mPlayer->mNeedBufferring){
-            if(mPlayer->mVPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM
-                || ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size() <= UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM)
+        if (!mPlayer->playOver2(mPlayer->mLastPacketPts, mPlayer->mAudioOrVideo) && !mPlayer->mNeedBufferring){
+            if(mPlayer->mVPacketQueue->size() <= /*UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM*/ mPlayer->mMinBufferingQueueNum
+               /* || ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size() <= /*UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM //mPlayer->mMinBufferingQueueNum)*/
                 || ((0 == mPlayer->mPreparedDone || 1 == mPlayer->mPreparedDone) && mPlayer->mYUVSlotQueue->size() != 0)){
                 
                 //((0 == mPlayer->mPreparedDone || 1 == mPlayer->mPreparedDone) && mPlayer->mYUVSlotQueue->size() != 0)
@@ -132,32 +148,32 @@ void URendererVideo::render() {
             }
         }
         
-        /*备份第一帧视频数据
-         Add By HuangWeiqing*/
+        
+        /*
+         如果是视频首次播放，又或者是seek操作，备份解码得第一帧，用于显示
+         Add by HuangWeiqing
+         */
         pthread_rwlock_rdlock(&mPlayer->mRWLock);
-        if (!mPlayer->mIsFirstVideoFramePrepared && mPlayer->mYUVQueue->size() != 0) {
+        if (!mPlayer->mFirstVideoFrameDecoded && mPlayer->mYUVQueue->size() != 0) {
             pkt = (av_link)mPlayer->mYUVQueue->get();
-            if (!pkt) {
-                ulog_err("URendererVideo::render mYUVQueue->get() == NULL");
-            }else{
+            if (pkt) {
                 backupLastFrame(pkt);
                 mPlayer->mYUVSlotQueue->put(pkt);
-                mPlayer->mIsFirstVideoFramePrepared = true;
-                mPlayer->notifyMsg(MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED);
+                mPlayer->mFirstVideoFrameDecoded = true;
             }
         }
         pthread_rwlock_unlock(&mPlayer->mRWLock);
+        
+        
 #endif
         
-#if PLATFORM_DEF != IOS_PLATFORM
 		if ( mPlayer->mNeedYUVBufferFull ) {
 			usleep(UPLAYER_PAUSE_TIME);
 			continue;
 		}
-#endif
 
 		if ( mPlayer->isPause() || mPlayer->mNeedBufferring) {
-            showLastFrame();
+			showLastFrame();
 			usleep(UPLAYER_PAUSE_TIME);
 			continue;
 		}
@@ -337,7 +353,7 @@ bool URendererVideo::synchronize(av_link pkt){
     diff = audio_pts - video_pts;
 	
 
-    ulog_info("audio_pts: %f, video_pts: %f, diff: %f", audio_pts, video_pts, diff);
+//    ulog_info("audio pts: %f, video pts: %f diff: %f", audio_pts, video_pts, diff);
     
 	//视频慢8帧以上就执行seek操作
 	if(diff > UPLAYER_SYNCHRONIZE_THRESHOLD_MAX){
@@ -412,16 +428,9 @@ void	 URendererVideo::backupLastFrame(av_link frame){
 void URendererVideo::refreshEGL(){
     
 	if(mPlayer->mNeedInitSurface){
-        
-    
-#if PLATFORM_DEF == IOS_PLATFORM
-        mLockRenderVideo->lock();
-#endif
-            
 #if PLATFORM_DEF != LINUX_PLATFORM
 		//释放绘图对象
 		if(mGraphics)delete mGraphics;
-
 		mGraphics = new UGraphics(mPlayer,mPlayer->mEGL, mPlayer->mVideoWidth,
 				mPlayer->mVideoHeight);
 #endif
@@ -435,10 +444,6 @@ void URendererVideo::refreshEGL(){
 				mPlayer->notifyMsg(MEDIA_INFO_PLAYERROR);
 			}
 		#endif
-    
-#if PLATFORM_DEF == IOS_PLATFORM
-        mLockRenderVideo->unlock();
-#endif
 	}
         
 }
@@ -470,14 +475,6 @@ URendererVideo::~URendererVideo(){
 	mLastFrame = NULL;
     
 #if PLATFORM_DEF == IOS_PLATFORM
-    
-    if(mFirstFrame->item){
-        av_free(mFirstFrame->item);
-        mFirstFrame->item = NULL;
-    }
-    if(mFirstFrame)av_free(mFirstFrame);
-    mFirstFrame = NULL;
-    
     if (mLockRenderVideo) {
         delete mLockRenderVideo;
     }
@@ -491,44 +488,5 @@ void URendererVideo::setRenderVideo(bool shown){
     mLockRenderVideo->lock();
     mRenderVideo = shown;
     mLockRenderVideo->unlock();
-
 }
-
-void URendererVideo::backupFirstFrame(av_link frame){
-    if(frame && frame->item && frame->size > 0){
-        if(!mFirstFrame->item){
-            mFirstFrame->item = av_malloc(frame->size);
-            if(!mFirstFrame->item){
-                ulog_err("URendererVideo::backupLastFrame av_malloc failed 1");
-                return;
-            }
-            mFirstFrame->size = frame->size;
-        }else if(mFirstFrame->size != frame->size){
-            av_free(mFirstFrame->item);
-            mFirstFrame->item = av_malloc(frame->size);
-            if(!mFirstFrame->item){
-                ulog_err("URendererVideo::backupLastFrame av_malloc failed 2");
-                return;
-            }
-            mFirstFrame->size = frame->size;
-        }
-        memcpy(mFirstFrame->item,frame->item,frame->size);
-    }
-}
-
-void URendererVideo::showFirstFrame(){
-    refreshEGL();
-    
-#if PLATFORM_DEF == IOS_PLATFORM
-    mLockRenderVideo->lock();
-    if (mRenderVideo) {
-#endif
-        if(mFirstFrame->item)mGraphics->UpdateWindow(mFirstFrame->item);
-        
-#if PLATFORM_DEF == IOS_PLATFORM
-    }
-    mLockRenderVideo->unlock();
-#endif
-}
-
 #endif

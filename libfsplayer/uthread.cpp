@@ -1,7 +1,7 @@
 #include "uthread.h"
 #include "ucommon.h"
 
-UThread::UThread(char* name){
+UThread::UThread(const char* name){
 	//设置线程名字
 	mThreadName = name;
 	//设置线程状态

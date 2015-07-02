@@ -53,27 +53,30 @@ bool EGLSurface::InitEGL(int width, int height)
         if (!uPlayer)
             return false;
         
-        glView = [[IOSEglView alloc] initEGLWithDecoderWidth:width
-                                               WithDecoderHeight:height
-                                                      WithBounds:panelView.bounds
-                                                   WithIosPlayer:iosPlayer
-                                                  WithParentView:panelView];
-        
-        if (!glView)
-            return false;
-        
-        glView.player = uPlayer;
-        
-        __weak IOSEglView * weakGlView = glView;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if(weakGlView){
-                [panelView addSubview:weakGlView];
-                [weakGlView setFrame:CGRectMake(0, 0, ((Panel *)panelView).playerBounds.size.width,
-                                              ((Panel *)panelView).playerBounds.size.height)];
-                weakGlView.contentMode = weakGlView.superview.contentMode;
-            }
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            glView = [[IOSEglView alloc] initEGLWithDecoderWidth:width
+                                        WithDecoderHeight:height
+                                        WithBounds:panelView.bounds
+                                        WithIosPlayer:iosPlayer
+                                        WithParentView:panelView];
+            
+            
         });
         
+        if (![glView setCurrentText]) {
+            glView = nil;
+            return false;
+        }
+        glView.player = uPlayer;
+        __weak IOSEglView * weakGlView = glView;
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            if(panelView && weakGlView){
+                [panelView addSubview:weakGlView];
+                [panelView setFrame:CGRectMake(0, 0, ((Panel *)panelView).playerBounds.size.width,
+                                                ((Panel *)panelView).playerBounds.size.height)];
+                weakGlView.contentMode = panelView.contentMode;
+            }
+        });
     }
     
     
@@ -164,7 +167,7 @@ void EGLSurface::setUPlayer(UPlayer *player)
     
     if (_contentModeAnimation) {
         [UIView beginAnimations:@"contenMode" context:nil];
-//        [UIView setAnimationDuration:1];
+        [UIView setAnimationDuration:0.3];
     }
     
     /*Zoom images.
@@ -382,49 +385,93 @@ void EGLSurface::setUPlayer(UPlayer *player)
     
     _decoderWidth = width;
     _decoderHeight = height;
-    CAEAGLLayer *eaglLayer = (CAEAGLLayer*) self.layer;
-    eaglLayer.opaque = YES;
-    eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
-                                    [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking,
-                                    kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat,
-                                    nil];
-    
-    _context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-    
-    if (!_context ||
-        ![EAGLContext setCurrentContext:_context]) {
-        
-        NSLog(@"failed to setup EAGLContext");
-        self = nil;
-        return nil;
-    }
-    glGenFramebuffers(1, &_framebuffer);
-    glGenRenderbuffers(1, &_renderbuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
-    [_context renderbufferStorage:GL_RENDERBUFFER fromDrawable:(CAEAGLLayer*)self.layer];
-    
-    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &_backingWidth);
-    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &_backingHeight);
-    
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _renderbuffer);
-    
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-        
-        NSLog(@"failed to make complete framebuffer object %x", status);
-        self = nil;
-        return self;
-    }
-    
-    GLenum glError = glGetError();
-    if (GL_NO_ERROR != glError) {
-        
-        NSLog(@"failed to setup GL %x", glError);
-        self = nil;
-        return self;
-    }
+//    CAEAGLLayer *eaglLayer = (CAEAGLLayer*) self.layer;
+//    eaglLayer.opaque = YES;
+//    eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
+//                                    [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking,
+//                                    kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat,
+//                                    nil];
+//    
+//    _context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+//    
+//    if (!_context ||
+//        ![EAGLContext setCurrentContext:_context]) {
+//        
+//        NSLog(@"failed to setup EAGLContext");
+//        self = nil;
+//        return nil;
+//    }
+//    glGenFramebuffers(1, &_framebuffer);
+//    glGenRenderbuffers(1, &_renderbuffer);
+//    glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+//    glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
+//    [_context renderbufferStorage:GL_RENDERBUFFER fromDrawable:(CAEAGLLayer*)self.layer];
+//    
+//    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &_backingWidth);
+//    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &_backingHeight);
+//    
+//    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _renderbuffer);
+//    
+//    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+//    if (status != GL_FRAMEBUFFER_COMPLETE) {
+//        
+//        NSLog(@"failed to make complete framebuffer object %x", status);
+//        self = nil;
+//        return self;
+//    }
+//    
+//    GLenum glError = glGetError();
+//    if (GL_NO_ERROR != glError) {
+//        
+//        NSLog(@"failed to setup GL %x", glError);
+//        self = nil;
+//        return self;
+//    }
     return self;
+}
+
+-(BOOL)setCurrentText{
+        CAEAGLLayer *eaglLayer = (CAEAGLLayer*) self.layer;
+        eaglLayer.opaque = YES;
+        eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
+                                        [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking,
+                                        kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat,
+                                        nil];
+    
+        _context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+    
+        if (!_context ||
+            ![EAGLContext setCurrentContext:_context]) {
+    
+            NSLog(@"failed to setup EAGLContext");
+            return NO;
+        }
+        glGenFramebuffers(1, &_framebuffer);
+        glGenRenderbuffers(1, &_renderbuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
+        [_context renderbufferStorage:GL_RENDERBUFFER fromDrawable:(CAEAGLLayer*)self.layer];
+    
+        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &_backingWidth);
+        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &_backingHeight);
+    
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _renderbuffer);
+    
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+    
+            NSLog(@"failed to make complete framebuffer object %x", status);
+            return NO;
+        }
+    
+        GLenum glError = glGetError();
+        if (GL_NO_ERROR != glError) {
+            
+            NSLog(@"failed to setup GL %x", glError);
+            return NO;
+        }
+    return YES;
+
 }
 
 -(void)updateSurface

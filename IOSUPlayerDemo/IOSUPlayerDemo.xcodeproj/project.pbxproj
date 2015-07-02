@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F12B01611B2AB9CF007C11AA /* Icon-72.png in Resources */ = {isa = PBXBuildFile; fileRef = F12B015F1B2AB9CF007C11AA /* Icon-72.png */; };
+		F12B01621B2AB9CF007C11AA /* Icon-72@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F12B01601B2AB9CF007C11AA /* Icon-72@2x.png */; };
 		F16F43F11ACD200900EA260A /* FSIOSPlayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = F16F43EE1ACD200900EA260A /* FSIOSPlayer.mm */; };
 		F16F43F21ACD200900EA260A /* IOSEGLSurface.mm in Sources */ = {isa = PBXBuildFile; fileRef = F16F43F01ACD200900EA260A /* IOSEGLSurface.mm */; };
 		F16F44181ACD203900EA260A /* uallocator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F16F43F31ACD203900EA260A /* uallocator.cpp */; };
@@ -51,6 +53,11 @@
 		F17681ED1A512297008EBF90 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681EC1A512297008EBF90 /* MediaPlayer.framework */; };
 		F17681EF1A5122A4008EBF90 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681EE1A5122A4008EBF90 /* QuartzCore.framework */; };
 		F17681F11A5122AE008EBF90 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681F01A5122AE008EBF90 /* CoreAudio.framework */; };
+		F1C872651B26C78A00372D7B /* playerSlider@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F1C872641B26C78A00372D7B /* playerSlider@2x.png */; };
+		F1C872671B26D3FE00372D7B /* playerPlay@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F1C872661B26D3FE00372D7B /* playerPlay@2x.png */; };
+		F1C8726D1B26F2C200372D7B /* playerPause@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F1C8726C1B26F2C200372D7B /* playerPause@2x.png */; };
+		F1C872721B27D8D000372D7B /* playerPause1@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F1C872701B27D8D000372D7B /* playerPause1@2x.png */; };
+		F1C872731B27D8D000372D7B /* playerPlay1@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F1C872711B27D8D000372D7B /* playerPlay1@2x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +71,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F12B015F1B2AB9CF007C11AA /* Icon-72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Icon-72.png"; path = "png/Icon-72.png"; sourceTree = "<group>"; };
+		F12B01601B2AB9CF007C11AA /* Icon-72@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Icon-72@2x.png"; path = "png/Icon-72@2x.png"; sourceTree = "<group>"; };
 		F16F43ED1ACD200900EA260A /* FSIOSPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FSIOSPlayer.h; path = ../IOSUPlayer/IOSUPlayer/FSIOSPlayer.h; sourceTree = "<group>"; };
 		F16F43EE1ACD200900EA260A /* FSIOSPlayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = FSIOSPlayer.mm; path = ../IOSUPlayer/IOSUPlayer/FSIOSPlayer.mm; sourceTree = "<group>"; };
 		F16F43EF1ACD200900EA260A /* IOSEGLSurface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IOSEGLSurface.h; path = ../IOSUPlayer/IOSUPlayer/IOSEGLSurface.h; sourceTree = "<group>"; };
@@ -136,6 +145,11 @@
 		F17681EC1A512297008EBF90 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		F17681EE1A5122A4008EBF90 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		F17681F01A5122AE008EBF90 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		F1C872641B26C78A00372D7B /* playerSlider@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "playerSlider@2x.png"; path = "png/playerSlider@2x.png"; sourceTree = "<group>"; };
+		F1C872661B26D3FE00372D7B /* playerPlay@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "playerPlay@2x.png"; path = "png/playerPlay@2x.png"; sourceTree = "<group>"; };
+		F1C8726C1B26F2C200372D7B /* playerPause@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "playerPause@2x.png"; path = "png/playerPause@2x.png"; sourceTree = "<group>"; };
+		F1C872701B27D8D000372D7B /* playerPause1@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "playerPause1@2x.png"; path = "png/playerPause1@2x.png"; sourceTree = "<group>"; };
+		F1C872711B27D8D000372D7B /* playerPlay1@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "playerPlay1@2x.png"; path = "png/playerPlay1@2x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -173,9 +187,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F158A4681AECCED60036FA6C /* icon */ = {
+			isa = PBXGroup;
+			children = (
+				F1C872641B26C78A00372D7B /* playerSlider@2x.png */,
+				F1C872661B26D3FE00372D7B /* playerPlay@2x.png */,
+				F1C8726C1B26F2C200372D7B /* playerPause@2x.png */,
+				F1C872701B27D8D000372D7B /* playerPause1@2x.png */,
+				F1C872711B27D8D000372D7B /* playerPlay1@2x.png */,
+				F12B015F1B2AB9CF007C11AA /* Icon-72.png */,
+				F12B01601B2AB9CF007C11AA /* Icon-72@2x.png */,
+			);
+			name = icon;
+			sourceTree = "<group>";
+		};
 		F176819E1A511FBC008EBF90 = {
 			isa = PBXGroup;
 			children = (
+				F158A4681AECCED60036FA6C /* icon */,
 				F16F43F31ACD203900EA260A /* uallocator.cpp */,
 				F16F43F41ACD203900EA260A /* uallocator.h */,
 				F16F43F51ACD203900EA260A /* ucommon.h */,
@@ -376,7 +405,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				F17681C61A511FBC008EBF90 /* Images.xcassets in Resources */,
+				F1C872671B26D3FE00372D7B /* playerPlay@2x.png in Resources */,
+				F12B01621B2AB9CF007C11AA /* Icon-72@2x.png in Resources */,
+				F1C872731B27D8D000372D7B /* playerPlay1@2x.png in Resources */,
+				F1C8726D1B26F2C200372D7B /* playerPause@2x.png in Resources */,
+				F1C872651B26C78A00372D7B /* playerSlider@2x.png in Resources */,
+				F12B01611B2AB9CF007C11AA /* Icon-72.png in Resources */,
 				F17681B51A511FBC008EBF90 /* InfoPlist.strings in Resources */,
+				F1C872721B27D8D000372D7B /* playerPause1@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -538,8 +574,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_IDENTITY = "iPhone Developer: Li Xu (28X484TJ8U)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_INPUT_FILETYPE = automatic;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "IOSUPlayerDemo/IOSUPlayerDemo-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
@@ -548,6 +585,7 @@
 					../libffmpeg,
 				);
 				INFOPLIST_FILE = "IOSUPlayerDemo/IOSUPlayerDemo-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(DEVELOPER_DIR)/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib",
@@ -556,6 +594,7 @@
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "97157e07-84f9-405c-872b-4bd9a97010ad";
 				VALID_ARCHS = armv7;
 				WRAPPER_EXTENSION = app;
 			};
@@ -566,8 +605,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_IDENTITY = "iPhone Developer: Li Xu (28X484TJ8U)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_INPUT_FILETYPE = automatic;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "IOSUPlayerDemo/IOSUPlayerDemo-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
@@ -576,6 +616,7 @@
 					../libffmpeg,
 				);
 				INFOPLIST_FILE = "IOSUPlayerDemo/IOSUPlayerDemo-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(DEVELOPER_DIR)/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib",
@@ -583,6 +624,7 @@
 				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "97157e07-84f9-405c-872b-4bd9a97010ad";
 				VALID_ARCHS = armv7;
 				WRAPPER_EXTENSION = app;
 			};

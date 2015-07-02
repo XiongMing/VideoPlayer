@@ -25,7 +25,7 @@ public:
 	  * @author  YanJia
 	  * @param[in]  name 线程名称
 	*/
-	UThread(char* name);
+	UThread(const char* name);
 	/**
 	  * @brief  线程类析构函数
 	  * @author  YanJia
@@ -72,14 +72,14 @@ protected:
 	  * @author  YanJia
 	  * @return 返回线程的名称
 	*/
-    char*						getName(){return mThreadName;}
+    const char*						getName(){return mThreadName;}
 
 
 private:
 	/**
 	  * @brief  线程名称
 	*/
-    char*						mThreadName;
+    const char*						mThreadName;
 	/**
 	  * @brief  线程ID
 	*/

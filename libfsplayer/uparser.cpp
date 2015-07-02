@@ -66,8 +66,9 @@ int UParser::seek() {
     /*这里如果标示为等于号的时候，可能出现相等即发送播放结束信号
      可能那时候视频还没播放结束，你就发送这个消息
      */
-    if (mPlayer->mSeekPosition > mPlayer->mMediaFile->duration / 1000
-        && mPlayer->mState != UPLAYER_PAUSED) {
+    int64_t startTime = (mPlayer->mStreamType & UPLAYER_STREAM_VIDEO) ? mPlayer->mVStartTime : mPlayer->mAStartTime;
+    int64_t seekPosition = (0 != startTime ) ? (mPlayer->mSeekPosition - startTime) : mPlayer->mSeekPosition;
+    if (seekPosition > mPlayer->mMediaFile->duration / 1000 && mPlayer->mState != UPLAYER_PAUSED) {
 #else
 	if (mPlayer->mSeekPosition >= mPlayer->mMediaFile->duration / 1000
 			&& mPlayer->mState != UPLAYER_PAUSED) {
@@ -88,13 +89,13 @@ int UParser::seek() {
 	mPlayer->flush();
 	//seek
 
-#if PLATFORM_DEF != IOS_PLATFORM
 	//获得seek到的时间戳
+#if PLATFORM_DEF != IOS_PLATFORM
 	timestamp = mPlayer->mSeekPosition
 			* mPlayer->mTimeBase[mPlayer->mSeekStreamIndex].den / 1000;
 #else
-        timestamp = mPlayer->mSeekPosition * mPlayer->mTimeBase[mPlayer->mSeekStreamIndex].den /
-        (mPlayer->mTimeBase[mPlayer->mSeekStreamIndex].num * 1000);
+        timestamp = mPlayer->mSeekPosition
+        * mPlayer->mTimeBase[mPlayer->mSeekStreamIndex].den / (1000 * mPlayer->mTimeBase[mPlayer->mSeekStreamIndex].num);
 #endif
 
 	ret = av_seek_frame(mPlayer->mMediaFile, mPlayer->mSeekStreamIndex,
@@ -142,7 +143,7 @@ void UParser::parse() {
 	ulog_info("UParser::parse enter");
 
 	while (!mPlayer->isStop()) {
-//            ulog_info("apacketsize: %d, vpacketSize: %d, UPLAYERsize: %d, buffering: %s, aslotQueueSize: %d, vslotQueueSize: %d", mPlayer->mAPacketQueue->size(), mPlayer->mVPacketQueue->size(), UPLAYER_VIDEO_PACKET_BUFFERRING_NUM, mPlayer->mNeedBufferring ? "true" : "false", mPlayer->mASlotQueue->size(), mPlayer->mVSlotQueue->size());
+//            ulog_info("apacketsize: %d, vpacketSize: %d, UPLAYERsize: %d, buffering: %s, aslotQueueSize: %d, vslotQueueSize: %d, mYUVQueue: %d", mPlayer->mAPacketQueue->size(), mPlayer->mVPacketQueue->size(), UPLAYER_VIDEO_PACKET_BUFFERRING_NUM, mPlayer->mNeedBufferring ? "true" : "false", mPlayer->mASlotQueue->size(), mPlayer->mVSlotQueue->size(), mPlayer->mYUVQueue->size());
 
 //        ulog_info("mYUVSlotQueue: %d", mPlayer->mYUVSlotQueue->size());
         
@@ -161,7 +162,7 @@ void UParser::parse() {
         
         //第一次启动发送准备完成的操作
         if (0 == mPlayer->mPreparedDone){
-            bool playOver2 = mPlayer->playOver2(mPlayer->mLastPacketPts);
+            bool playOver2 = mPlayer->playOver2(mPlayer->mLastPacketPts, mPlayer->mAudioOrVideo);
             //缓冲
             if (mPlayer->mNeedBufferring){
                 //parser结束
@@ -173,8 +174,8 @@ void UParser::parse() {
                     }
                 }else{
                     //满足缓冲下限
-                    if((mPlayer->mVPacketQueue->size()>=UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM)||
-                       ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size()>= UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM)){
+                    if((mPlayer->mVPacketQueue->size()>=/*UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM*/mPlayer->mMaxBufferingQueueNum)/*||
+                       ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size()>= mPlayer->mMaxBufferingQueueNum/*UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM//)*/){
                         //yuv空槽的大小为0
                         if (mPlayer->mYUVSlotQueue->size() == 0){
                             mPlayer->mPreparedDone = 2;
@@ -201,14 +202,12 @@ void UParser::parse() {
         
         if (mPlayer->mNeedBufferring) {
             //parser结束发送缓冲结束消息
-            if (mPlayer->playOver2(mPlayer->mLastPacketPts)){
+            if (mPlayer->playOver2(mPlayer->mLastPacketPts, mPlayer->mAudioOrVideo)){
                 if(!sign){
-                    //paser结束，并且不是首次播放和快进状态
                     mPlayer->mNeedBufferring = false;
                     mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_END);
                     ulog_info("MEDIA_INFO_BUFFERING_END send in urenderer_video.cpp");
                 }else{
-                    //保证yuv空槽满了，若没满而mVPacketSize为0
                     if (0 == mPlayer->mYUVSlotQueue->size() ||(0 != mPlayer->mYUVSlotQueue->size() && 0 == mPlayer->mVPacketQueue->size())) {
                         mPlayer->mNeedBufferring = false;
                         mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_END);
@@ -218,7 +217,7 @@ void UParser::parse() {
                 }
             }else{
                 
-                if((mPlayer->mVPacketQueue->size()>=UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM)||((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size()>= UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM)){
+                if((mPlayer->mVPacketQueue->size()>=/*UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM*/mPlayer->mMaxBufferingQueueNum)/*||((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size()>= /*UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM//mPlayer->mMaxBufferingQueueNum)*/){
                     
                     if (!sign || (sign && 0 == mPlayer->mYUVSlotQueue->size())) {
                         mPlayer->mNeedBufferring = false;
@@ -242,14 +241,26 @@ void UParser::parse() {
                 }
             }
         }
-        
         //Shows that you set to skip end.
         if (mPlayer->mEndPlaybackTime != 0 &&  mPlayer->playOver(mPlayer->getCurrentPosition())) {
-            mPlayer->flush();
-            if (!mPlayer->mRepeatMode)
-                break;
-            else
+//            pthread_rwlock_wrlock(&mPlayer->mRWLock);
+//            mPlayer->flush();
+//            pthread_rwlock_unlock(&mPlayer->mRWLock);
+//            if (!mPlayer->mRepeatMode)
+//                break;
+//            else
+//                mPlayer->notifyMsg(MEDIA_INFO_PLAY_TO_END);
+            
+            if (!hasSendToPlayToTheEnd) {
+                pthread_rwlock_wrlock(&mPlayer->mRWLock);
+                mPlayer->flush();
+                pthread_rwlock_unlock(&mPlayer->mRWLock);
+
                 mPlayer->notifyMsg(MEDIA_INFO_PLAY_TO_END);
+                hasSendToPlayToTheEnd = true;
+            }
+            usleep(UPLAYER_PAUSE_TIME);
+            continue;
         }
 #endif
 
@@ -269,18 +280,13 @@ void UParser::parse() {
              Add by HuangWeqing
              */
             pthread_rwlock_wrlock(&mPlayer->mRWLock);
-            
             /*
              该标志用于标示不管是快进还是快退时候，用该动作之后的第一针音频解码时间做同步
              Add by HuangWeiqing
              */
             mPlayer->mFirstAudioPacketDecoded = false;
             mPlayer->mPreparedDone = 1;
-            if (mPlayer->mIsFirstVideoFramePrepared) {
-                mPlayer->mIsFirstVideoFramePrepared = false;
-                mPlayer->notify(MEDIA_PLAYER_READY_FOR_DISPLAY_DID_CHANGED);
-            }
-            
+            mPlayer->mFirstVideoFrameDecoded = false;
 #endif
 			ret = seek();
             
@@ -302,6 +308,15 @@ void UParser::parse() {
 		}
 
 		ret = av_read_frame(mPlayer->mMediaFile, &packet);
+#if PLATFORM_DEF == IOS_PLATFORM
+        
+        if(0 == ret && mPlayer->mEof){
+            mPlayer->mEof = false;
+        }
+        
+        if(AVERROR_EOF == ret && !mPlayer->mEof)
+            mPlayer->mEof = true;
+#endif
 
 		if (ret < 0) {
 
@@ -310,22 +325,37 @@ void UParser::parse() {
 					usleep(UPLAYER_PAUSE_TIME);
 					continue;
 				}
-            
-				if (mPlayer->playOver(mPlayer->getCurrentPosition()) && mPlayer->mVPacketQueue->size() == 0
-						&& mPlayer->mAPacketQueue->size() == 0 && mPlayer->mYUVQueue->size() == 0 && mPlayer->mPCMQueue->size() == 0) {
+#if PLATFORM_DEF != IOS_PLATFORM
+            if (mPlayer->playOver(mPlayer->getCurrentPosition()) && mPlayer->mVPacketQueue->size() == 0
+						&& mPlayer->mAPacketQueue->size() == 0 && mPlayer->mYUVQueue->size() == 0 && mPlayer->mPCMQueue->size() == 0)
+#else
+                if (mPlayer->mEof && mPlayer->mVPacketQueue->size() == 0
+                    && mPlayer->mAPacketQueue->size() == 0 && mPlayer->mYUVQueue->size() == 0 && mPlayer->mPCMQueue->size() == 0)
+#endif  
+                {
                     
 #if PLATFORM_DEF == IOS_PLATFORM
-                        if (mPlayer->isRepeatMode()) {
-                            if (!hasSendToPlayToTheEnd) {
-                                mPlayer->notifyMsg(MEDIA_INFO_PLAY_TO_END);
-                                hasSendToPlayToTheEnd = true;
-                            }
-                            usleep(UPLAYER_PAUSE_TIME);
-                            continue;
-                        }
-#endif
+                    
+                    if (!hasSendToPlayToTheEnd) {
+                        mPlayer->notifyMsg(MEDIA_INFO_PLAY_TO_END);
+                        hasSendToPlayToTheEnd = true;
+                    }
+                    usleep(UPLAYER_PAUSE_TIME);
+                    continue;
+
+                    
+//                        if (mPlayer->isRepeatMode()) {
+//                            if (!hasSendToPlayToTheEnd) {
+//                                mPlayer->notifyMsg(MEDIA_INFO_PLAY_TO_END);
+//                                hasSendToPlayToTheEnd = true;
+//                            }
+//                            usleep(UPLAYER_PAUSE_TIME);
+//                            continue;
+//                        }
+#else
 					ulog_info("uplayer buffer thread read media file over");
 					break;
+#endif
 				}
 
 				if (av_gettime() - end_time < UPLAYER_NETWORK_TRY_TIME) {
@@ -353,6 +383,12 @@ void UParser::parse() {
 		if (AV_NOPTS_VALUE == packet.pts) {
 			ulog_err("UParser::parse AV_NOPTS_VALUE == packet.pts");
 			last_packet_pts = 0;
+#if PLATFORM_DEF == IOS_PLATFORM
+            //如果没有视频pts得话，使用dts作为显示时间
+            if (AV_NOPTS_VALUE != packet.dts) {
+                last_packet_pts = packet.dts * 1000;
+            }
+#endif
 		}else{
 			last_packet_pts = packet.pts;
 			last_packet_pts *= 1000;
@@ -364,13 +400,17 @@ void UParser::parse() {
 			packet_queue = mPlayer->mAPacketQueue;
 
 			last_packet_pts *= av_q2d(mPlayer->mTimeBase[mPlayer->mAudioStreamIndex]);
-
+#if PLATFORM_DEF == IOS_PLATFORM
+            mPlayer->mAudioOrVideo = false;
+#endif
 		} else if (mPlayer->mVideoStreamIndex == packet.stream_index) {
 			//获得视频的空槽队列和数据包队列
 			slot_queue = mPlayer->mVSlotQueue;
 			packet_queue = mPlayer->mVPacketQueue;
-
 			last_packet_pts *= av_q2d(mPlayer->mTimeBase[mPlayer->mVideoStreamIndex]);
+#if PLATFORM_DEF == IOS_PLATFORM
+            mPlayer->mAudioOrVideo = true;
+#endif
 
 		} else {
 			ulog_err("free packet");

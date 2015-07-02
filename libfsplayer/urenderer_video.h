@@ -131,11 +131,6 @@ public:
 private:
     bool mRenderVideo;
     ULock *mLockRenderVideo;
-    
-    void   backupFirstFrame(av_link frame);
-    void   showFirstFrame();
-    av_link mFirstFrame;
-    
 #endif
 };
 
