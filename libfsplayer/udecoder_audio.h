@@ -68,6 +68,17 @@ private:
 	  * @author  YanJia
 	*/
     void				init_swr(AVFrame* frame);
+    
+#if PLATFORM_DEF == IOS_PLATFORM
+    int                 mBufferSize;
+    void                *mDataBuf;
+    int                 mIndex;
+#endif
+    
+#if IOS_PLAYER_ENABLE_WRITE_PCM_FILE_TO_LOCAL_DEBUG
+    NSString            *mPCMFile;
+    NSFileHandle        *mFileHandler;
+#endif
 
 };
 

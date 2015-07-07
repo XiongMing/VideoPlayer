@@ -133,7 +133,7 @@ void URendererVideo::render() {
          发送缓冲开始消息 Add by HuangWeiqing
          */
         if (!mPlayer->playOver2(mPlayer->mLastPacketPts, mPlayer->mAudioOrVideo) && !mPlayer->mNeedBufferring){
-            if(mPlayer->mVPacketQueue->size() <= /*UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM*/ mPlayer->mMinBufferingQueueNum
+            if(mPlayer->mVPacketQueue->size() < /*UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM*/ mPlayer->mMinBufferingQueueNum
                /* || ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size() <= /*UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM //mPlayer->mMinBufferingQueueNum)*/
                 || ((0 == mPlayer->mPreparedDone || 1 == mPlayer->mPreparedDone) && mPlayer->mYUVSlotQueue->size() != 0)){
                 
@@ -356,12 +356,17 @@ bool URendererVideo::synchronize(av_link pkt){
 //    ulog_info("audio pts: %f, video pts: %f diff: %f", audio_pts, video_pts, diff);
     
 	//视频慢8帧以上就执行seek操作
+#if PLATFORM_DEF != IOS_PLATFORM
 	if(diff > UPLAYER_SYNCHRONIZE_THRESHOLD_MAX){
-    #if PLATFORM_DEF != IOS_PLATFORM
 		skipFrame(UPLAYER_SKIP_LEVEL1);
-    #endif
 		return true;
 	}
+#else
+    if(diff > (2 * UPLAYER_SYNCHRONIZE_THRESHOLD_MAX)){
+        skipFrame(UPLAYER_SKIP_LEVEL1);
+        return true;
+    }
+#endif
 
 	usleep( (interval = getRestTime(diff) ) < UPLAYER_SYNCHRONIZE_MAX_INTERVAL ? interval: UPLAYER_SYNCHRONIZE_MAX_INTERVAL);
 

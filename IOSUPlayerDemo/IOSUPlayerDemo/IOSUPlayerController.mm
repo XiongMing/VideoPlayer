@@ -10,7 +10,21 @@
 #import <MediaPlayer/MPVolumeView.h>
 #import "uerror_code.h"
 
-#define APPFORITUNES  (false)
+
+@implementation BackGroundView
+
++(Class)layerClass{
+    return [CAGradientLayer class];
+}
+
+@end
+
+#define APPFORITUNES  (true)
+#define DISABLE_NSLOG (true)
+#if DISABLE_NSLOG
+#define NSLog(...) {}
+#endif
+
 #define IsAtLeastiOSVersion(X) ([[[UIDevice currentDevice] systemVersion] compare:X options:NSNumericSearch] != NSOrderedAscending)
 @interface  IOSUPlayerController ()
 {
@@ -21,9 +35,11 @@
     
     UIToolbar           * _bottomBar;
     UIToolbar           * _topBar;
+    
+    UIBarButtonItem     *_playPauseBtn;
     UIBarButtonItem     *_playBtn;
-//    UIButton *  _playBtn;
     UIBarButtonItem     *_pauseBtn;
+    
     UIBarButtonItem     *_rewindBtn;
     UIBarButtonItem     *_forwardBtn;
     UIBarButtonItem     *_spaceItem;
@@ -36,12 +52,13 @@
     
     UIView              *_airPlayeBtn;
     UIView              *_extraView;
+    UIView              *_tapView;
     MPVolumeView        *_volumeView;
     MPVolumeView        *_voiceView;
     UIBarButtonItem     *_voiceBtn;
     
-    UIView              *_topHUD;
-    UIView              *_botHUD;
+    BackGroundView              *_topHUD;
+    BackGroundView              *_botHUD;
     
     UILabel             *_leftLabel;
     UISlider            *_progressSlider;
@@ -109,14 +126,6 @@
                                                object:nil];
     
     
-    
-
-    //---------------------------------------------
-    //add player observer
-    
-    
-    NSLog(@"IOSPlayer: %@", _player);
-    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(loadStateChanged:)
                                                  name:MPMoviePlayerLoadStateDidChangeNotification
                                                object:_player];
@@ -169,8 +178,6 @@
                                                    object:_player];
         
     }
-    
-    
     
     
     
@@ -228,6 +235,9 @@
     [self createLeftLable:topH];
     [self createRightLable:bounds withTopH:topH];
     [self createExtraView:bounds];
+    [self createTapView:bounds withTopH:topH withBotH:botH];
+    
+    
     [self createProgressSlider:bounds withTopH:topH];
     [self createTopBar:bounds withTopH:topH];
     [self createActivityIndicator];
@@ -238,15 +248,18 @@
     
     [self createPlayBtn];
     [self createPauseBtn];
+    
     [self createContentModeBtn];
     [self createFullscreenBtn];
     [self createRepeatModeBtn];
     [self createDestroyBtn];
-    [self createSpaceItem];
     [self createVoiceItem];
     
+    [self createSpaceItem];
+    [self createFixedSpaceItem];
+    
 #if APPFORITUNES
-    [_bottomBar setItems:@[_spaceItem, _playBtn, _spaceItem, _voiceBtn, _spaceItem] animated:NO];
+    [_bottomBar setItems:@[_spaceItem, _playBtn, _fixedSpaceItem, _voiceBtn, _spaceItem] animated:NO];
 #else
     [_bottomBar setItems:@[_spaceItem, _playBtn,
                            _spaceItem,
@@ -256,7 +269,9 @@
 #endif
     
     [self.view addSubview:_extraView];
-    [_extraView addGestureRecognizer:_tap];
+    [self.view addSubview:_tapView];
+//    [_extraView addGestureRecognizer:_tap];
+    [_tapView addGestureRecognizer:_tap];
     [_extraView addSubview:_topBar];
     [_extraView addSubview:_bottomBar];
     
@@ -315,17 +330,21 @@
     _doneButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _doneButton.frame = CGRectMake(4, 14, 40, 25);
     [_doneButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-    [_doneButton setTitle:NSLocalizedString(@"退出", nil) forState:UIControlStateNormal];
-    _doneButton.titleLabel.font = [UIFont systemFontOfSize:12];
+    [_doneButton setTitle:NSLocalizedString(@"OK", nil) forState:UIControlStateNormal];
+    _doneButton.titleLabel.font = [UIFont systemFontOfSize:14];
     _doneButton.showsTouchWhenHighlighted = YES;
     [_doneButton addTarget:self action:@selector(doneDidTouch:) forControlEvents:UIControlEventTouchUpInside];
 }
 
 -(void)createHUD:(CGRect)bounds withTopH:(CGFloat)topH{
-    _topHUD    = [[UIView alloc] initWithFrame:CGRectMake(0,0,0,0)];
+    _topHUD    = [[BackGroundView alloc] initWithFrame:CGRectMake(0,0,0,0)];
     _topHUD.frame = CGRectMake(0, 0, bounds.size.width, topH);
     _topHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    _topHUD.backgroundColor = [UIColor lightGrayColor];
+//    _topHUD.backgroundColor = [UIColor lightGrayColor];
+    ((CAGradientLayer *)_topHUD.layer).colors = [NSArray arrayWithObjects:
+                                                          (id)[UIColor colorWithRed:(float)249/255 green:(float)205/255 blue:(float)173/255 alpha:1].CGColor,
+                                                          (id)[UIColor colorWithRed:(float)131/255 green:(float)175/255 blue:(float)155/255 alpha:1].CGColor,
+                                                          nil];
     _topHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 }
 
@@ -359,6 +378,12 @@
     _extraView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
 }
 
+-(void)createTapView:(CGRect)bounds withTopH:(CGFloat)topH withBotH:(CGFloat)botH{
+    _tapView = [[UIView alloc] initWithFrame:CGRectMake(0, bounds.origin.y + topH, bounds.size.width, bounds.size.height - topH - botH)];
+    _tapView.backgroundColor = [UIColor clearColor];
+    _tapView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+}
+
 -(void)createPlayBtn{
     UIImage *playImage = [UIImage imageNamed:@"playerPlay1"];
     UIButton *playBtn1 = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -373,7 +398,7 @@
 //    UIImage *pauseImage = [UIImage imageNamed:@"playerPause"];
     UIImage *pauseImage = [UIImage imageNamed:@"playerPause1"];
     UIButton *pauseBtn1 = [UIButton buttonWithType:UIButtonTypeCustom];
-    pauseBtn1.frame = CGRectMake(0, 0, 17, 23);
+    pauseBtn1.frame = CGRectMake(0, 0, 18, 23);
     [pauseBtn1 setBackgroundImage:pauseImage forState:UIControlStateNormal];
     pauseBtn1.showsTouchWhenHighlighted = YES;
     [pauseBtn1 addTarget:self action:@selector(pauseTouch:) forControlEvents:UIControlEventTouchUpInside];
@@ -429,9 +454,13 @@
     CGFloat width = bounds.size.width;
     CGFloat height = bounds.size.height;
     _bottomBar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, height-botH, width, botH)];
-    _botHUD = [[UIView alloc] initWithFrame:CGRectMake(0, 0, _bottomBar.frame.size.width, _bottomBar.frame.size.height)];
-    _botHUD.backgroundColor = [UIColor lightGrayColor];
+    _botHUD = [[BackGroundView alloc] initWithFrame:CGRectMake(0, 0, _bottomBar.frame.size.width, _bottomBar.frame.size.height)];
+    _botHUD.backgroundColor = [UIColor colorWithRed:(float)131/255 green:(float)175/155 blue:(float)155/255 alpha:1];
     _botHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    ((CAGradientLayer *)_botHUD.layer).colors = [NSArray arrayWithObjects:
+                                                 (id)[UIColor colorWithRed:(float)131/255 green:(float)175/255 blue:(float)155/255 alpha:1].CGColor,
+                                                 (id)[UIColor colorWithRed:(float)249/255 green:(float)205/255 blue:(float)173/255 alpha:1].CGColor,
+                                                 nil];
     [_bottomBar insertSubview:_botHUD atIndex:0];
     _bottomBar.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
 //    _bottomBar.alpha = 0.33;
@@ -440,8 +469,8 @@
 
 -(void)createTap{
     _tap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(tapOperation)];
-    _tap.numberOfTapsRequired = 2;
-    _tap.numberOfTouchesRequired = 2;
+    _tap.numberOfTapsRequired = 1;
+    _tap.numberOfTouchesRequired = 1;
 }
 
 -(void)createContentModeBtn{
@@ -484,6 +513,13 @@
                                                                action:nil];
 }
 
+-(void)createFixedSpaceItem{
+    _fixedSpaceItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace
+                                                               target:nil
+                                                               action:nil];
+    _fixedSpaceItem.width = 20;
+}
+
 #pragma mark - Touch
 
 -(void) doneDidTouch:(id) sender
@@ -491,7 +527,7 @@
     [self appWillEnterBackGroundActionOrDoneDidTouch];
     
     if (self.presentingViewController || !self.navigationController)
-        [self dismissViewControllerAnimated:NO completion:nil];
+        [self dismissViewControllerAnimated:YES completion:nil];
     else
         [self.navigationController popViewControllerAnimated:YES];
 }
@@ -631,13 +667,15 @@
     if (_player.loadState & MPMovieLoadStatePlayable
         && !_fspPlayerLoadFinished) {
         _fspPlayerLoadFinished = YES;
-        _hidden = NO;
+//        _hidden = NO;
         _progressSlider.hidden = NO;
-        _bottomBar.hidden = NO;
+//        _bottomBar.hidden = NO;
         _rightLabel.hidden = NO;
         _leftLabel.text = formatTimeInterval(0, NO);
-//        [[[_player.view subviews] objectAtIndex:0] addGestureRecognizer:_tap];
-//        [self.view addGestureRecognizer:_tap];
+        
+        _topBar.hidden = YES;
+        _bottomBar.hidden = YES;
+        _hidden = YES;
     }
     
     if (_player.loadState == (MPMovieLoadStatePlayable | MPMovieLoadStateStalled)) {
@@ -794,14 +832,12 @@
 -(void)playbackStateChange:(NSNotification *)notification{
     
 #if APPFORITUNES
-    UIBarButtonItem *playPauseBtn = nil;
-    NSLog(@"");
     if (_player.playbackState == MPMoviePlaybackStatePaused) {
-        playPauseBtn = _playBtn;
+        _playPauseBtn = _playBtn;
     }else{
-        playPauseBtn = _pauseBtn;
+        _playPauseBtn = _pauseBtn;
     }
-    [_bottomBar setItems:@[_spaceItem, playPauseBtn, _spaceItem, _voiceBtn,_spaceItem] animated:NO];
+    [_bottomBar setItems:@[_spaceItem, _playPauseBtn, _fixedSpaceItem, _voiceBtn,_spaceItem] animated:NO];
 #endif
     
     switch (_player.playbackState) {
@@ -909,15 +945,14 @@
 {
     [self setUIViewShow];
     
-    if ([_progressTimer isValid]) {
+    if (_progressTimer && [_progressTimer isValid]) {
         [_progressTimer invalidate];
         _progressTimer = nil;
-        NSLog(@"_progressTimer_progressTimer_progressTimer: %@", _progressTimer);
     }
     [_player stop];
     _player = nil;
     _fspPlayerLoadFinished = NO;
-    printf("appWillEnterBackGroundActionOrDoneDidTouch\n");
+    NSLog(@"appWillEnterBackGroundActionOrDoneDidTouch\n");
     
 }
 
@@ -944,14 +979,6 @@
 -(void)updateBottomBar
 {
 #if !APPFORITUNES
-//    UIBarButtonItem *playPauseBtn = nil;
-//    if (_player.playbackState == MPMoviePlaybackStatePaused) {
-//        playPauseBtn = _playBtn;
-//    }else{
-//        playPauseBtn = _pauseBtn;
-//    }
-//    [_bottomBar setItems:@[_spaceItem, playPauseBtn, _spaceItem, _voiceBtn,_spaceItem] animated:NO];
-//#else
     UIBarButtonItem *playPauseBtn = nil;
     if (_player.playbackState == MPMoviePlaybackStatePaused) {
         playPauseBtn = _playBtn;
@@ -1041,6 +1068,7 @@ static NSString * formatTimeInterval(CGFloat seconds, BOOL isLeft)
     
     [_extraView removeFromSuperview];
     _extraView = nil;
+    _playPauseBtn = nil;
 //    [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
 }
 

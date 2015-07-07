@@ -38,7 +38,7 @@ int URendererAudioQueue::createAudioQueuePlayer(int channels, int samplerate){
     deviceFormat.mSampleRate = samplerate;
     deviceFormat.mFormatID = kAudioFormatLinearPCM;
     deviceFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger; // Signed integer, little endian
-//     deviceFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked; // Signed integer, little endian
+//    deviceFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked; // Signed integer, little endian
     deviceFormat.mBytesPerPacket = 4;
     deviceFormat.mFramesPerPacket = 1;
     deviceFormat.mBytesPerFrame = 4;
@@ -119,12 +119,11 @@ void URendererAudioQueue::render(){
 
 	while(!mPlayer->isStop()){
         
-#if PLATFORM_DEF == IOS_PLATFORM
         if (!(mPlayer->mStreamType & UPLAYER_STREAM_AUDIO)) {
             usleep(UPLAYER_PAUSE_TIME);
             continue;
         }
-#endif
+        
         if (mPlayer->isPause()) {
             if (!is_pause) {
                 // 第一次进入暂停状态
@@ -142,7 +141,6 @@ void URendererAudioQueue::render(){
             }
         }
 		//获取PCM数据包
-        
         pthread_rwlock_rdlock(&mPlayer->mRWLock);
         if (mPlayer->mPCMQueue->size() == 0) {
             pthread_rwlock_unlock(&mPlayer->mRWLock);
@@ -161,11 +159,11 @@ void URendererAudioQueue::render(){
          加锁的目的就是为了防止调用AudioQueueReset的时候，往queue里面添加数据，造成死锁
          */
         mLock.lock();
-
-		//处理数据包        
+		//处理数据包
 	    status = AudioQueueAllocateBuffer(this->mAudioQueue, pcm_pkt->size, &buffer);
 	    if(status){
 	    	ulog_err("URendererAudioTrack::render AudioQueueAllocateBuffer failed");
+            mPlayer->mPCMSlotQueue->put(pcm_pkt);
             mLock.unlock();
             pthread_rwlock_unlock(&mPlayer->mRWLock);
             usleep(UPLAYER_PAUSE_TIME);

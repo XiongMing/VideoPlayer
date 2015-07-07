@@ -14,3 +14,7 @@
 -(id)initWithContentURL:(NSString *)url withEnableHevc:(BOOL)enableHevc withHardDecoder:(BOOL)sign;
 
 @end
+
+@interface BackGroundView : UIView
+
+@end

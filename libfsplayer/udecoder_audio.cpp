@@ -10,6 +10,9 @@ extern "C" {
 
 } // end of extern C
 
+#define FRAME_SIZE (4096<<2)
+#define FRAME_MIN_SIZE (4096<<1)
+
 void UDecoderAudio::process(av_link pkt) {
 	av_link pcm_pkt;
 	int ret;
@@ -20,8 +23,7 @@ void UDecoderAudio::process(av_link pkt) {
 	int channels = mPlayer->mMediaFile->streams[mPlayer->mAudioStreamIndex]->codec->channels;
 	int sample_rate = mPlayer->mMediaFile->streams[mPlayer->mAudioStreamIndex]->codec->sample_rate;
 	enum AVSampleFormat sample_fmt = mPlayer->mMediaFile->streams[mPlayer->mAudioStreamIndex]->codec->sample_fmt;
-
-
+    
 	if(UPLAYER_DECODER_FLUSH_FLAG == pkt->flag){
 		//清空视频解码器缓冲区
 		avcodec_flush_buffers(mPlayer->mMediaFile->streams[mPlayer->mAudioStreamIndex]->codec);
@@ -29,7 +31,6 @@ void UDecoderAudio::process(av_link pkt) {
 		return;
 	}
     
-
 #if PLATFORM_DEF == IOS_PLATFORM
     AVPacket pkt1 = (*((AVPacket *)pkt->item));
     while (pkt1.size > 0) {
@@ -44,6 +45,7 @@ void UDecoderAudio::process(av_link pkt) {
             continue;
         
         size = mPlayer->mAudioDecFrame->channels * mPlayer->mAudioDecFrame->nb_samples * av_get_bytes_per_sample(sample_fmt);
+        
         //针对采样精度不是AV_SAMPLE_FMT_S16的情况，对其进行重新采样
         init_swr(mPlayer->mAudioDecFrame);
         if (sample_fmt != AV_SAMPLE_FMT_S16 || 2 != channels) {
@@ -59,23 +61,51 @@ void UDecoderAudio::process(av_link pkt) {
             
         }
         
+        if ((mIndex + size) > mBufferSize) {
+            mBufferSize = mIndex + size;
+            mDataBuf = realloc(mDataBuf, mBufferSize);
+        }
+        
+        memcpy((uint8_t *)mDataBuf + mIndex,  mPlayer->mAudioFrame->data[0], size);
+        mIndex += size;
+        
+        if (mIndex < FRAME_MIN_SIZE) {
+            continue;
+        }
+        
         while (true) {
             //这里如果一个包里面含有多帧，防止出现死锁，原因我用读写锁进行同步，如果多帧没有多余的pcm空槽可用，判断
             //如果是快进或则是stop状态直接返回，目的是尽快释放读锁进入快进操作
             if (mPlayer->mPCMSlotQueue->size() != 0)    break;
-            if (mPlayer->mIsSeeking || mPlayer->isStop())    return;
+            if (mPlayer->mIsSeeking || mPlayer->isStop()){
+                //如果快进或者停止得话，丢弃当前缓冲区得数据，没必要，因为都快进，当前可以不播
+                mIndex = 0;
+                return;
+            }
             usleep(UPLAYER_PAUSE_TIME);
-        } 
+        }
         
         pcm_pkt = (av_link) mPlayer->mPCMSlotQueue->get();
         if (!pcm_pkt) {
             ulog_err("UDecoderAudio::process mPCMSlotQueue->get() == NULL");
             return;
         }
-        pcm_pkt->item = mPlayer->mAudioFrame->data[0];
-        pcm_pkt->size = size;
+        pcm_pkt->item = mDataBuf;
+        pcm_pkt->size = mIndex;
+        
+        #if IOS_PLAYER_ENABLE_WRITE_PCM_FILE_TO_LOCAL_DEBUG
+                @autoreleasepool{
+                    NSData *data1 = [NSData dataWithBytes:mDataBuf length:mIndex];
+                    [mFileHandler writeData:data1];
+                }
+        #endif
+        
         mPlayer->mPCMQueue->put(pcm_pkt);
+        
+        //一个完整得包，该包处理完，清0（把若干个pcm帧拼成符合下限得pcm音频数据）
+        mIndex = 0;
     }
+    
     
 #else
     
@@ -164,6 +194,27 @@ void UDecoderAudio::updateCurrentPosition(av_link pkt) {
 }
 void UDecoderAudio::decode() {
 
+    
+#if IOS_PLAYER_ENABLE_WRITE_PCM_FILE_TO_LOCAL_DEBUG
+    @autoreleasepool{
+        NSArray *tmpArray  = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *documentPath = [tmpArray objectAtIndex:0];
+        mPCMFile = [documentPath stringByAppendingPathComponent:@"auido.pcm"];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        if (![fileManager fileExistsAtPath:mPCMFile]) {
+            [fileManager createFileAtPath:mPCMFile contents:nil attributes:nil];
+        }
+        mFileHandler = [NSFileHandle fileHandleForWritingAtPath:mPCMFile];
+    }
+#endif
+    
+    
+#if PLATFORM_DEF == IOS_PLATFORM
+    mBufferSize = FRAME_SIZE;
+    mDataBuf = malloc(FRAME_SIZE);
+    mIndex = 0;
+#endif
+    
 	av_link pkt;
 
 	ulog_info("UDecoderAudio::decode enter");
@@ -237,6 +288,19 @@ void UDecoderAudio::decode() {
             pthread_rwlock_unlock(&mPlayer->mRWLock);
         #endif
 	}
+    
+#if IOS_PLAYER_ENABLE_WRITE_PCM_FILE_TO_LOCAL_DEBUG
+    [mFileHandler closeFile];
+    mFileHandler = nil;
+    mPCMFile = nil;
+#endif
+    
+#if PLATFORM_DEF == IOS_PLATFORM
+    free(mDataBuf);
+    mDataBuf = NULL;
+#endif
+    
+    
 	ulog_info("UDecoderAudio::decode exit");
 }
 void UDecoderAudio::stop() {
@@ -282,3 +346,4 @@ void UDecoderAudio::init_swr(AVFrame* frame){
 	}
 
 }
+

@@ -11,20 +11,6 @@
 
 bool APPFORITUNES = true;
 
-
-@interface BackGroundView : UIView
-
-@end
-
-@implementation BackGroundView
-
-+(Class)layerClass{
-    return [CAGradientLayer class];
-}
-
-@end
-
-
 @interface ViewController ()
 {
     
@@ -37,23 +23,34 @@ bool APPFORITUNES = true;
     UIView      *_optimizationView;
     CAGradientLayer *_gradient;
     BackGroundView *_backgroundView1;
-    
     BOOL    _enableHevc;
-    
     UITableView *_tableView;
-    NSMutableArray *_pathNames;
-    NSMutableArray *_paths;
+    NSMutableDictionary *_keyFiles;
+    NSMutableArray      *_keys;
+    
     
     UITableViewCellEditingStyle _editingStyle;
+    
+    NSString *_directory;
 }
 @end
 
 @implementation ViewController
 
+-(id)initWithDirectory:(NSString *)directory{
+    _directory = nil;
+    _directory = directory;
+    if(!(self = [super init])){
+        return nil;
+    }
+    return self;
+}
 
 - (void)viewDidLoad
 {
+     NSLog(@"viewDidLoad called");
     [super viewDidLoad];
+    
     _enableHevc = YES;
     CGRect bounds = [[UIScreen mainScreen] applicationFrame];
     bounds.size.width = [self getFullScreenSize].width;
@@ -62,58 +59,28 @@ bool APPFORITUNES = true;
     [self initialization];
     
     [self setSelfViewProperty:bounds];
-    
     [self createHardDecoder:bounds];
     [self createOptimization:bounds];
     [self setTableProperty:bounds];
     [self createSubView:bounds];
-//    [self createSubLayer:bounds];
+    //    [self createSubLayer:bounds];
     
     
     [self.view addSubview:_tableView];
     [self.view addSubview:_closeHardDecoderView];
-
+    
+    [self initalTableData];
     if (!APPFORITUNES) {
         [self.view addSubview:_optimizationView];
     }
     
-//    [self.view.layer insertSublayer:_gradient atIndex:0];
+    //    [self.view.layer insertSublayer:_gradient atIndex:0];
     [self.view insertSubview:_backgroundView1 atIndex:0];
     
-    [self initalTableData];
-    NSLog(@"viewDidLoad called");
+    
 }
 
 
--(void)viewDidUnload{
-    [super viewDidUnload];
-    NSLog(@"viewDidUnload called");
-}
-
--(void)loadView{
-    [super loadView];
-    NSLog(@"loadView called");
-}
-
--(void)viewWillAppear:(BOOL)animated{
-    [super viewWillAppear:animated];
-    NSLog(@"viewWillAppear called");
-}
-
--(void)viewDidAppear:(BOOL)animated{
-    [super viewDidAppear:animated];
-    NSLog(@"viewDidAppear called");
-}
-
--(void)viewWillDisappear:(BOOL)animated{
-    [super viewWillDisappear:animated];
-    NSLog(@"viewWillDisappear called");
-}
-
--(void)viewDidDisappear:(BOOL)animated{
-    [super viewDidDisappear:animated];
-    NSLog(@"viewDidDisappear called");
-}
 
 //-(void)viewDidLayoutSubviews{
 //    [super viewDidLayoutSubviews];
@@ -126,7 +93,7 @@ bool APPFORITUNES = true;
 #pragma mark - creation ui
 -(void)setSelfViewProperty:(CGRect)bounds{
     self.view = [[UIView alloc] initWithFrame:bounds];
-    self.view.backgroundColor = [UIColor brownColor];
+    self.view.backgroundColor = [UIColor clearColor];
     self.view.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
 }
 
@@ -136,7 +103,7 @@ bool APPFORITUNES = true;
     CGFloat closeHarderHeight = 50;
     _closeHardDecoerLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, closeHarderLableWidth, 50)];
     _closeHardDecoerLabel.text = @"关闭硬解";
-    _closeHardDecoerLabel.textColor = [UIColor whiteColor];
+    _closeHardDecoerLabel.textColor = [UIColor blackColor];
     _closeHardDecoderSwith = [[UISwitch alloc] initWithFrame:CGRectMake(closeHarderLableWidth, 10, closeHarderSwitchWidth, closeHarderHeight)];
     [_closeHardDecoderSwith addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
     [_closeHardDecoderSwith setOn:NO];
@@ -146,7 +113,7 @@ bool APPFORITUNES = true;
     if (APPFORITUNES) {
         cloaseHardDecoderViewX = bounds.size.width/2 - closeHarderWidth/2;
     }
-    _closeHardDecoderView = [[UIView alloc] initWithFrame:CGRectMake(cloaseHardDecoderViewX, 30, closeHarderWidth, closeHarderHeight)];
+    _closeHardDecoderView = [[UIView alloc] initWithFrame:CGRectMake(cloaseHardDecoderViewX, 15, closeHarderWidth, closeHarderHeight)];
     [_closeHardDecoderView addSubview:_closeHardDecoerLabel];
     [_closeHardDecoderView addSubview:_closeHardDecoderSwith];
     _closeHardDecoderView.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
@@ -169,32 +136,37 @@ bool APPFORITUNES = true;
 
 - (void)initalTableData
 {
-    NSArray *externsion = [NSArray arrayWithObjects:@"avi", @"rmvb", @"mkv", @"mp4", @"ts", @"mts", @"tp", @"mpg", @"rm", @"mov", @"flv", @"swf", @"wmv", nil];
-    NSArray *tmpArray  = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSLog(@"%@", tmpArray);
-    NSString *documentPath = [tmpArray objectAtIndex:0];
-    NSLog(@"documentPath: %@", documentPath);
-//    NSArray *documentPaths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:documentPath];
-    NSError *error = nil;
-    NSArray *filenames = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:documentPath error:&error];
-    if (!error) {
-        _pathNames = [[NSMutableArray alloc] init];
-        _paths = [[NSMutableArray alloc] init];
-        for(int i = 0; i < filenames.count; i++)
-        {
-            NSString *filename  = [filenames objectAtIndex:i];
-            int j = 0;
-            for(; j < externsion.count; j++)
-                if ([[filename lowercaseString] rangeOfString:[externsion objectAtIndex:j]].length > 0)
-                    break;
-            
-            if (j == externsion.count)
-                continue;
-            
-            [_pathNames addObject:filename];
-            [_paths addObject:[documentPath stringByAppendingPathComponent:filename]];
-        }
-    }
+//    NSArray *externsion = [NSArray arrayWithObjects:@"avi", @"rmvb", @"mkv", @"mp4", @"ts", @"mts", @"tp", @"mpg", @"rm", @"mov", @"flv", @"swf", @"wmv", nil];
+//    NSArray *tmpArray  = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+////    NSLog(@"%@", tmpArray);
+//    NSString *documentPath = nil;
+//    if (_directory) {
+//        documentPath = _directory;
+//    }else{
+//        documentPath = [tmpArray objectAtIndex:0];
+//    }
+////    NSLog(@"documentPath: %@", documentPath);
+////    NSArray *documentPaths = [[NSBundle mainBundle] pathsForResourcesOfType:@"mp4" inDirectory:documentPath];
+//    NSError *error = nil;
+//    NSArray *filenames = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:documentPath error:&error];
+//    if (!error) {
+//        _pathNames = [[NSMutableArray alloc] init];
+//        _paths = [[NSMutableArray alloc] init];
+//        for(int i = 0; i < filenames.count; i++)
+//        {
+//            NSString *filename  = [filenames objectAtIndex:i];
+////            int j = 0;
+////            for(; j < externsion.count; j++)
+////                if ([[filename lowercaseString] rangeOfString:[externsion objectAtIndex:j]].length > 0)
+////                    break;
+////            
+////            if (j == externsion.count)
+////                continue;
+//            
+//            [_pathNames addObject:filename];
+//            [_paths addObject:[documentPath stringByAppendingPathComponent:filename]];
+//        }
+//    }
     
 //    [_pathNames addObject:@"http://huaqiangu.mp4"];
 //    [_paths addObject:@"http://k.youku.com/player/getFlvPath/sid/8434446948428123f1446_00/st/mp4/fileid/031020010055791BF4C5EA2E10BECFC92EEE48-AF34-794F-A01F-4DC5A9E20B24?K=354598c9b601d0a024123d6c&hd=1&myp=0&ts=2363&ypp=0&ymovie=1&ep=eiaXHk2JUMcE7SfdgD8bZHrjcHMJXP4J9x%2BHgdJjALshTe%2B2mEynw%2B61O45AY%2FgZAFd1Zpj4qaWSH0QcYYE1qmwQ2EesT%2FqR%2FvGV5aknt5Vxb2w0cr%2FVsFSXRTD1&ctype=12&ev=1&token=9604&oip=3702892418"];
@@ -217,12 +189,45 @@ bool APPFORITUNES = true;
 //    
 //    [_pathNames addObject:@"m3u8"];
 //    [_paths addObject:@"http://cache.m.iqiyi.com/dc/amdt/b4d3c0f0x3deea9a6/ee36e508b4ebdedf60cc8f48e10d9627/310986900/088ef05abf17255701bcdfe9bbb51239.m3u8?qd_asc=fe6c9b0f0544c3c22889251638b80a96&qd_asrc=f45bc84a7ea643209b29a72b0c1e385f&qd_at=1435029204392&qypid=310986900_21"];
+    
+    NSArray *tmpArray  = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    //    NSLog(@"%@", tmpArray);
+    NSString *documentPath = nil;
+    if (_directory) {
+        documentPath = _directory;
+    }else{
+        documentPath = [tmpArray objectAtIndex:0];
+    }
+    _keys = [NSMutableArray arrayWithObjects:@"files", @"directories", nil];
+    _keyFiles = [[NSMutableDictionary alloc] init];
+    NSMutableArray *files = [[NSMutableArray alloc] init];
+    NSMutableArray *directories = [[NSMutableArray alloc] init];
+    NSError *error = nil;
+    NSArray *filenames = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:documentPath error:&error];
+    if (!error) {
+        
+        for(int i = 0; i < filenames.count; i++)
+        {
+            NSString *filename  = [filenames objectAtIndex:i];
+            NSString *path = [documentPath stringByAppendingPathComponent:filename];
+            BOOL isDirectory = NO;
+            BOOL  exists = NO;
+            exists = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory];
+            if (isDirectory) {
+                [directories addObject:path];
+            }else{
+                [files addObject:path];
+            }
+        }
+    }
+    [_keyFiles setObject:files forKey:@"files"];
+    [_keyFiles setObject:directories forKey:@"directories"];
 
     
 }
 
 -(void)setTableProperty:(CGRect)bounds{
-    _tableView = [[UITableView  alloc] initWithFrame:CGRectMake(0, 100, bounds.size.width, bounds.size.height - 100)];
+    _tableView = [[UITableView  alloc] initWithFrame:CGRectMake(0, 60, bounds.size.width, bounds.size.height - 100)];
     _tableView.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleWidth |
     UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
     [_tableView setDelegate:self];
@@ -235,11 +240,19 @@ bool APPFORITUNES = true;
 -(void)createSubView:(CGRect)bounds{
     _backgroundView1 = [[BackGroundView alloc] initWithFrame:CGRectMake(0, 0, bounds.size.width, bounds.size.height)];
     _backgroundView1.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    ((CAGradientLayer *)_backgroundView1.layer).colors = [NSArray arrayWithObjects:
-                                                          (id)[UIColor lightGrayColor].CGColor,
-                                                          (id)[UIColor blackColor].CGColor,
-                                                          (id)[UIColor lightGrayColor].CGColor,
-                                                          nil];
+//    ((CAGradientLayer *)_backgroundView1.layer).colors = [NSArray arrayWithObjects:
+//                                                          (id)[UIColor blueColor].CGColor,
+//                                                          (id)[UIColor blackColor].CGColor,
+//                                                          (id)[UIColor darkGrayColor].CGColor,
+//                                                          nil];
+    
+        ((CAGradientLayer *)_backgroundView1.layer).colors = [NSArray arrayWithObjects:
+                                                             (id)[UIColor colorWithRed:(float)249/255 green:(float)205/255 blue:(float)173/255 alpha:1].CGColor,
+                                                             (id)[UIColor colorWithRed:(float)131/255 green:(float)175/255 blue:(float)155/255 alpha:1].CGColor,
+                                                              nil];
+
+    
+    
 //    _backgroundView1.layer.borderColor = [UIColor greenColor].CGColor;
     _backgroundView1.layer.masksToBounds = YES;
     _backgroundView1.backgroundColor = [UIColor blackColor];
@@ -258,9 +271,13 @@ bool APPFORITUNES = true;
 
 #pragma mark - UITableViewDataSource
 
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
+    return _keys.count;
+}
+
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    return _pathNames.count;
+    return ((NSArray *)[_keyFiles objectForKey:[_keys objectAtIndex:section]]).count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -275,11 +292,15 @@ bool APPFORITUNES = true;
                                       reuseIdentifier:cellIdentifier];
     }
     
+    
+    
+    
     /*关联数据*/
-    cell.textLabel.text = [_pathNames objectAtIndex:indexPath.row];
+//    cell.textLabel.text = [_pathNames objectAtIndex:indexPath.row];
+    cell.textLabel.text = [[[_keyFiles objectForKey:_keys[indexPath.section]] objectAtIndex:indexPath.row] lastPathComponent];
     cell.backgroundColor = [UIColor clearColor];
-    cell.textLabel.font = [UIFont systemFontOfSize:15];
-    cell.textLabel.textColor = [UIColor whiteColor];
+    cell.textLabel.font = [UIFont systemFontOfSize:18];
+    cell.textLabel.textColor = [UIColor blackColor];
 //    cell.imageView.image = [UIImage imageNamed:@"play24x24.png"];
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     cell.selectionStyle = UITableViewCellSelectionStyleBlue;
@@ -292,34 +313,46 @@ bool APPFORITUNES = true;
 #pragma mark - UITableViewDelegate
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return 45;
+    return 39;
 }
 
 
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    BOOL sign = NO;
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
 //    NSLog(@"---->>当前行：%d",indexPath.row);
-    NSString *path = [_paths objectAtIndex:indexPath.row];
-    NSRange range = [[path lowercaseString] rangeOfString:@"mp4"];
-    NSRange range1 = [[path lowercaseString] rangeOfString:@"mov"];
-    if (range.length > 0 || range1.length > 0)
-        sign = YES;
-    if (_closeHardDecoderSwith.on) {
-        sign = NO;
+//    NSString *path = [_paths objectAtIndex:indexPath.row];
+    NSString *path = [[_keyFiles objectForKey:[_keys objectAtIndex:indexPath.section]] objectAtIndex:indexPath.row];
+    
+    BOOL isDirectory = NO;
+    BOOL  exists = NO;
+    exists = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory];
+    if (!exists) return;
+    if (isDirectory) {
+        ViewController *content = [[ViewController alloc] initWithDirectory:path];
+        [self presentViewController:content animated:YES completion:nil];
+    }else{
+        BOOL sign = NO;
+        NSRange range = [[path lowercaseString] rangeOfString:@"mp4"];
+        NSRange range1 = [[path lowercaseString] rangeOfString:@"mov"];
+        if (range.length > 0 || range1.length > 0)
+            sign = YES;
+        if (_closeHardDecoderSwith.on) {
+            sign = NO;
+        }
+        IOSUPlayerController *playerController = [[IOSUPlayerController alloc]
+                                                  initWithContentURL:path withEnableHevc:_enableHevc withHardDecoder:sign];
+        [self presentViewController:playerController animated:YES completion:nil];
     }
-    IOSUPlayerController *playerController = [[IOSUPlayerController alloc]
-                                              initWithContentURL:path withEnableHevc:_enableHevc withHardDecoder:sign];
-    [self presentViewController:playerController animated:YES completion:nil];
 }
 
 
 -(void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath{
     if(_editingStyle == UITableViewCellEditingStyleDelete){
         NSFileManager *fileMgr = [NSFileManager defaultManager];
-        NSString *path = [_paths objectAtIndex:indexPath.row];
+//        NSString *path = [_paths objectAtIndex:indexPath.row];
+        NSString *path = [[_keyFiles objectForKey:[_keys objectAtIndex:indexPath.section]] objectAtIndex:indexPath.row];
         BOOL ret = [fileMgr fileExistsAtPath:path];
         if (ret) {
             NSError *error;
@@ -328,8 +361,9 @@ bool APPFORITUNES = true;
                 NSLog(@"DELETE FILE: %@ error", path);
             }
         }
-        [_paths removeObjectAtIndex:indexPath.row];
-        [_pathNames removeObjectAtIndex:indexPath.row];
+//        [_paths removeObjectAtIndex:indexPath.row];
+//        [_pathNames removeObjectAtIndex:indexPath.row];
+        [[_keyFiles objectForKey:[_keys objectAtIndex:indexPath.section]] removeObjectAtIndex:indexPath.row];
         [_tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
     }
 }
@@ -340,6 +374,11 @@ bool APPFORITUNES = true;
 
 -(NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath{
     return @"delete";
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+    return [_keys objectAtIndex:section];
 }
 
 #pragma mark - operation

@@ -947,15 +947,18 @@ status_t UPlayer::_prepare() {
     }
 
 #if PLATFORM_DEF == IOS_PLATFORM
-    if (mSampleRate >= 8000 || mFrameRate >= 12.0) {
+    if (mSampleRate >= 8000 && mFrameRate >= 12.0) {
         int sampleRate = mSampleRate / 1000;
         int frameRate = mFrameRate;
-        float maxBufferingDur = 20;
-        float minBufferingDur = 2;
-        mAudioSlotQueueNum = sampleRate * maxBufferingDur + 100;
-        mVideoSlotQueueNum = frameRate * maxBufferingDur + 100;
+        float maxBufferingDur = 8;
+        float minBufferingDur = 1;
+        float SlotQueueNum = 30;
+        mAudioSlotQueueNum = (sampleRate > frameRate ? sampleRate : frameRate) * SlotQueueNum + 100;
+        mVideoSlotQueueNum = mAudioSlotQueueNum;
         mMaxBufferingQueueNum = (frameRate > sampleRate ?  sampleRate : frameRate) * maxBufferingDur;
         mMinBufferingQueueNum = (frameRate > sampleRate ? frameRate : sampleRate) * minBufferingDur;
+//        mMaxBufferingQueueNum /= 3;
+//        mMinBufferingQueueNum /= 3;
 //        mMinBufferingQueueNum = mMinBufferingQueueNum < UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM ? UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM : mMinBufferingQueueNum;
     }
 #endif
@@ -1100,16 +1103,28 @@ status_t UPlayer::_prepare() {
     if(mRendererAudio) mRendererAudio->start();
     
     //启动视频渲染线程
-    if (mRendererVideo && mRendererVideo->start()) goto prepare_err;
+    if (mRendererVideo && mRendererVideo->start()) {
+        set_player_error_code(this,ERROR_SOFT_PLAYER_BAD_INVOKE);
+        goto prepare_err;
+    }
 
     //启动音频解码线程
-    if (mDecoderAudio && mDecoderAudio->start()) goto prepare_err;
+    if (mDecoderAudio && mDecoderAudio->start()) {
+        set_player_error_code(this,ERROR_SOFT_PLAYER_BAD_INVOKE);
+        goto prepare_err;
+    }
 
     //启动视频解码线程
-    if (mDecoderVideo && mDecoderVideo->start()) goto prepare_err;
+    if (mDecoderVideo && mDecoderVideo->start()) {
+        set_player_error_code(this,ERROR_SOFT_PLAYER_BAD_INVOKE);
+        goto prepare_err;
+    }
     
     //启动拆包线程
-    if (mParser && mParser->start()) goto prepare_err;
+    if (mParser && mParser->start()) {
+        set_player_error_code(this,ERROR_SOFT_PLAYER_BAD_INVOKE);
+        goto prepare_err;
+    }
 #endif
     //解锁
     unlock();

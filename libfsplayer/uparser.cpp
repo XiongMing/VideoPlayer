@@ -173,6 +173,15 @@ void UParser::parse() {
                         mPlayer->notifyMsg(MEDIA_INFO_PREPARED);
                     }
                 }else{
+                    if ((mPlayer->mVPacketQueue->size() < mPlayer->mMaxBufferingQueueNum) && ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mASlotQueue->size()==0)) {
+                        mPlayer->mMaxBufferingQueueNum = mPlayer->mVPacketQueue->size();
+                        if ((mPlayer->mMinBufferingQueueNum + 60) >= mPlayer->mMaxBufferingQueueNum) {
+                            mPlayer->mMinBufferingQueueNum = mPlayer->mMaxBufferingQueueNum - 60;
+                            mPlayer->mMinBufferingQueueNum = mPlayer->mMinBufferingQueueNum < 0 ? 0 : mPlayer->mMinBufferingQueueNum;
+                        }
+                        ulog_info("Reset mMaxBufferingQueueNum: %d", mPlayer->mVPacketQueue->size());
+                    }
+                    
                     //满足缓冲下限
                     if((mPlayer->mVPacketQueue->size()>=/*UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM*/mPlayer->mMaxBufferingQueueNum)/*||
                        ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size()>= mPlayer->mMaxBufferingQueueNum/*UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM//)*/){
@@ -201,6 +210,7 @@ void UParser::parse() {
         bool sign = (0 == mPlayer->mPreparedDone || 1 == mPlayer->mPreparedDone);
         
         if (mPlayer->mNeedBufferring) {
+            
             //parser结束发送缓冲结束消息
             if (mPlayer->playOver2(mPlayer->mLastPacketPts, mPlayer->mAudioOrVideo)){
                 if(!sign){
@@ -216,6 +226,15 @@ void UParser::parse() {
                     }
                 }
             }else{
+                
+                if ((mPlayer->mVPacketQueue->size() < mPlayer->mMaxBufferingQueueNum) && ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mASlotQueue->size()==0)) {
+                    mPlayer->mMaxBufferingQueueNum = mPlayer->mVPacketQueue->size();
+                    if ((mPlayer->mMinBufferingQueueNum + 60) >= mPlayer->mMaxBufferingQueueNum) {
+                        mPlayer->mMinBufferingQueueNum = mPlayer->mMaxBufferingQueueNum - 60;
+                        mPlayer->mMinBufferingQueueNum = mPlayer->mMinBufferingQueueNum < 0 ? 0 : mPlayer->mMinBufferingQueueNum;
+                    }
+                    ulog_info("Reset mMaxBufferingQueueNum: %d", mPlayer->mVPacketQueue->size());
+                }
                 
                 if((mPlayer->mVPacketQueue->size()>=/*UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM*/mPlayer->mMaxBufferingQueueNum)/*||((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size()>= /*UPLAYER_VIDEO_PACKET_MAX_BUFFERRING_NUM//mPlayer->mMaxBufferingQueueNum)*/){
                     

@@ -23,9 +23,9 @@
 /**
   * @brief  是否启用log功能
 */
-#define UPLAYER_ENABLE_LOG		1
+#define UPLAYER_ENABLE_LOG		0
 #define UPLAYER_DLNA_ENABLE_LOG		0
-#define UPLAYER_ENABLE_FFMPEG_LOG		1
+#define UPLAYER_ENABLE_FFMPEG_LOG		0
 /*
 	for more log level（NDK内置的log级别）
 
@@ -132,11 +132,11 @@ ulog(ULOG_INFO,__VA_ARGS__)
 #define ulog_err(fmt, ...) printf(#fmt"\n", ##__VA_ARGS__)
 #define ulog_info(fmt, ...) printf(#fmt"\n", ##__VA_ARGS__)
 #else
-#define logcat(log_level, tag, fmt, ...) printf(#fmt"\n", ##__VA_ARGS__)
-#define avlog(log_level, fmt, ...) printf(#fmt"\n", ##__VA_ARGS__)
-#define ulog(log_level, fmt, ...) printf(#fmt"\n", ##__VA_ARGS__)
-#define ulog_err(fmt, ...) printf(#fmt"\n", ##__VA_ARGS__)
-#define ulog_info(fmt, ...) printf(#fmt"\n", ##__VA_ARGS__)
+#define logcat(log_level, tag, fmt, ...) if(UPLAYER_ENABLE_LOG) printf(#fmt"\n", ##__VA_ARGS__)
+#define avlog(log_level, fmt, ...) if(UPLAYER_ENABLE_LOG) printf(#fmt"\n", ##__VA_ARGS__)
+#define ulog(log_level, fmt, ...) if(UPLAYER_ENABLE_LOG) printf(#fmt"\n", ##__VA_ARGS__)
+#define ulog_err(fmt, ...) if(UPLAYER_ENABLE_LOG) printf(#fmt"\n", ##__VA_ARGS__)
+#define ulog_info(fmt, ...) if(UPLAYER_ENABLE_LOG) printf(#fmt"\n", ##__VA_ARGS__)
 #endif
 
 #define PRINT_LINE

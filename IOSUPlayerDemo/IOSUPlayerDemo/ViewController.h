@@ -10,4 +10,6 @@
 
 @interface ViewController : UIViewController<UITableViewDelegate, UITableViewDataSource>
 
+-(id)initWithDirectory:(NSString *)directory;
+
 @end
