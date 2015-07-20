@@ -14,68 +14,105 @@ bool APPFORITUNES = true;
 @interface ViewController ()
 {
     
-    UIView      *_closeHardDecoderView;
-    UISwitch    *_closeHardDecoderSwith;
-    UILabel     *_closeHardDecoerLabel;
+    UIView              *_closeHardDecoderView;
+    UISwitch            *_closeHardDecoderSwith;
+    UILabel             *_closeHardDecoerLabel;
     
-    UILabel     *_optimizationLabel;
-    UISwitch    *_optimizationSwitch;
-    UIView      *_optimizationView;
-    CAGradientLayer *_gradient;
-    BackGroundView *_backgroundView1;
-    BOOL    _enableHevc;
-    UITableView *_tableView;
+    UILabel             *_optimizationLabel;
+    UISwitch            *_optimizationSwitch;
+    UIView              *_optimizationView;
+    CAGradientLayer     *_gradient;
+    BackGroundView      *_backgroundView1;
+    BOOL                _enableHevc;
+    UITableView         *_tableView;
     NSMutableDictionary *_keyFiles;
     NSMutableArray      *_keys;
-    
-    
+    UIButton            *_returnBtn;
     UITableViewCellEditingStyle _editingStyle;
-    
-    NSString *_directory;
+    NSString            *_directory;
+    BOOL                _enableHardDecoder;
+    BackGroundView      *_headerView;
+    UILabel             *_playerNameLabel;
 }
 @end
 
 @implementation ViewController
 
--(id)initWithDirectory:(NSString *)directory{
+-(id)initWithDirectory:(NSString *)directory withEnableHardDecoder:(BOOL)on{
     _directory = nil;
     _directory = directory;
+    _enableHardDecoder = on;
     if(!(self = [super init])){
         return nil;
     }
     return self;
 }
 
+-(void)viewDidUnload{
+    [super viewDidUnload];
+}
+
+
+
+-(void)loadView{
+    CGRect bounds = [[UIScreen mainScreen] applicationFrame];
+    bounds.size.width = [self getFullScreenSize].width;
+    bounds.size.height = [self getFullScreenSize].height;
+    [self setSelfViewProperty:bounds];
+}
+
 - (void)viewDidLoad
 {
-     NSLog(@"viewDidLoad called");
     [super viewDidLoad];
-    
+//     NSLog(@"viewDidLoad called");
     _enableHevc = YES;
     CGRect bounds = [[UIScreen mainScreen] applicationFrame];
     bounds.size.width = [self getFullScreenSize].width;
     bounds.size.height = [self getFullScreenSize].height;
     
+    CGFloat headerHeight = 80;
+    
     [self initialization];
     
-    [self setSelfViewProperty:bounds];
-    [self createHardDecoder:bounds];
-    [self createOptimization:bounds];
+//    [self setSelfViewProperty:bounds];
+    
+//    if (_directory) {
+//        [self createReturnBtn:bounds];
+//        [self.view addSubview:_returnBtn];
+//    }
+    
+    [self initalTableData];
     [self setTableProperty:bounds];
     [self createSubView:bounds];
     //    [self createSubLayer:bounds];
     
-    
     [self.view addSubview:_tableView];
-    [self.view addSubview:_closeHardDecoderView];
     
-    [self initalTableData];
+    if (!_directory) {
+        [self createHardDecoder:bounds];
+        [self.view addSubview:_closeHardDecoderView];
+    }
+    
     if (!APPFORITUNES) {
+        [self createOptimization:bounds];
         [self.view addSubview:_optimizationView];
     }
     
     //    [self.view.layer insertSublayer:_gradient atIndex:0];
     [self.view insertSubview:_backgroundView1 atIndex:0];
+    
+    [self createHeaderView:bounds withHeaderHeight:headerHeight];
+    [self.view addSubview:_headerView];
+    
+    if(_directory)
+    {
+        [self createReturnBtn:bounds withHeaderHeight:headerHeight];
+        [_headerView addSubview:_returnBtn];
+    }
+    
+    
+    [self createPlayerNameLabel:bounds withHeaderHeight:headerHeight];
+    [_headerView addSubview:_playerNameLabel];
     
     
 }
@@ -97,16 +134,33 @@ bool APPFORITUNES = true;
     self.view.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
 }
 
+-(void)createPlayerNameLabel:(CGRect)bounds withHeaderHeight:(CGFloat)headerHeight{
+    CGFloat labelWidth = bounds.size.width/3;
+    CGFloat labelHeight = 3 * headerHeight / 5;
+    CGFloat labelX = bounds.size.width/2 - labelWidth/2;
+    CGFloat labely = headerHeight/2 - labelHeight/2;
+    _playerNameLabel = [[UILabel alloc] initWithFrame:CGRectMake(labelX, labely, labelWidth, labelHeight)];
+    [_playerNameLabel setFont:[UIFont boldSystemFontOfSize:20]];
+    if(_directory)
+        _playerNameLabel.text = [_directory lastPathComponent];
+    else
+        _playerNameLabel.text = @"UPlayer";
+//    _playerNameLabel.adjustsFontSizeToFitWidth = YES;
+//    _playerNameLabel.backgroundColor = [UIColor redColor];
+    _playerNameLabel.textAlignment = NSTextAlignmentCenter;
+    _playerNameLabel.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
+}
+
 -(void)createHardDecoder:(CGRect)bounds{
     CGFloat closeHarderLableWidth = 80;
     CGFloat closeHarderSwitchWidth = 40;
     CGFloat closeHarderHeight = 50;
     _closeHardDecoerLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, closeHarderLableWidth, 50)];
-    _closeHardDecoerLabel.text = @"关闭硬解";
+    _closeHardDecoerLabel.text = @"打开硬解";
     _closeHardDecoerLabel.textColor = [UIColor blackColor];
     _closeHardDecoderSwith = [[UISwitch alloc] initWithFrame:CGRectMake(closeHarderLableWidth, 10, closeHarderSwitchWidth, closeHarderHeight)];
     [_closeHardDecoderSwith addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
-    [_closeHardDecoderSwith setOn:NO];
+    [_closeHardDecoderSwith setOn:_enableHardDecoder];
     _closeHardDecoderSwith.onTintColor = [UIColor lightGrayColor];
     CGFloat closeHarderWidth = closeHarderLableWidth + closeHarderSwitchWidth + 20;
     CGFloat cloaseHardDecoderViewX = bounds.size.width / 2 - 20 - closeHarderWidth - 20;
@@ -117,6 +171,26 @@ bool APPFORITUNES = true;
     [_closeHardDecoderView addSubview:_closeHardDecoerLabel];
     [_closeHardDecoderView addSubview:_closeHardDecoderSwith];
     _closeHardDecoderView.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
+}
+
+
+-(void)createReturnBtn:(CGRect)bounds withHeaderHeight:(CGFloat)headerHeight{
+    
+    CGFloat tmpBtnWidth=20, tmpBtnHeight=33, returnBtnWidth=40, returnBtnHeight=40;
+    UIImage *backImage = [UIImage imageNamed:@"playerBack"];
+    UIButton *tmpBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    tmpBtn.frame = CGRectMake(returnBtnWidth/2 - tmpBtnWidth/2, returnBtnHeight/2 - tmpBtnHeight/2,tmpBtnWidth, tmpBtnHeight);
+    [tmpBtn setBackgroundImage:backImage forState:UIControlStateNormal];
+    tmpBtn.userInteractionEnabled = NO;
+    _returnBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    _returnBtn.frame = CGRectMake(10, headerHeight/2 - returnBtnHeight/2, returnBtnWidth, returnBtnHeight);
+//    [_returnBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+//    [_returnBtn setBackgroundImage:backImage forState:UIControlStateNormal];
+//    [_returnBtn setTitle:NSLocalizedString(@"<<<", nil) forState:UIControlStateNormal];
+//    _returnBtn.titleLabel.font = [UIFont systemFontOfSize:24];
+    _returnBtn.showsTouchWhenHighlighted = YES;
+    [_returnBtn addSubview:tmpBtn];
+    [_returnBtn addTarget:self action:@selector(returnBtnTouch:) forControlEvents:UIControlEventTouchUpInside];
 }
 
 -(void)createOptimization:(CGRect)bounds{
@@ -227,7 +301,7 @@ bool APPFORITUNES = true;
 }
 
 -(void)setTableProperty:(CGRect)bounds{
-    _tableView = [[UITableView  alloc] initWithFrame:CGRectMake(0, 60, bounds.size.width, bounds.size.height - 100)];
+    _tableView = [[UITableView  alloc] initWithFrame:CGRectMake(0, 90, bounds.size.width, bounds.size.height - 100)];
     _tableView.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleWidth |
     UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
     [_tableView setDelegate:self];
@@ -235,6 +309,18 @@ bool APPFORITUNES = true;
     _tableView.tableFooterView = [[UIView alloc] init];
     _tableView.backgroundColor = [UIColor clearColor];
     _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+}
+
+-(void)createHeaderView:(CGRect)bounds withHeaderHeight:(CGFloat)headerHeight{
+    _headerView    = [[BackGroundView alloc] initWithFrame:CGRectMake(0,0,0,0)];
+    _headerView.frame = CGRectMake(0, 0, bounds.size.width, headerHeight);
+    _headerView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    //    _topHUD.backgroundColor = [UIColor lightGrayColor];
+//    ((CAGradientLayer *)_headerView.layer).colors = [NSArray arrayWithObjects:
+//                                                 (id)[UIColor colorWithRed:(float)249/255 green:(float)205/255 blue:(float)173/255 alpha:1].CGColor,
+//                                                 (id)[UIColor colorWithRed:(float)131/255 green:(float)175/255 blue:(float)155/255 alpha:1].CGColor,
+//                                                 nil];
+    _headerView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 }
 
 -(void)createSubView:(CGRect)bounds{
@@ -246,10 +332,10 @@ bool APPFORITUNES = true;
 //                                                          (id)[UIColor darkGrayColor].CGColor,
 //                                                          nil];
     
-        ((CAGradientLayer *)_backgroundView1.layer).colors = [NSArray arrayWithObjects:
-                                                             (id)[UIColor colorWithRed:(float)249/255 green:(float)205/255 blue:(float)173/255 alpha:1].CGColor,
-                                                             (id)[UIColor colorWithRed:(float)131/255 green:(float)175/255 blue:(float)155/255 alpha:1].CGColor,
-                                                              nil];
+//        ((CAGradientLayer *)_backgroundView1.layer).colors = [NSArray arrayWithObjects:
+//                                                             (id)[UIColor colorWithRed:(float)249/255 green:(float)205/255 blue:(float)173/255 alpha:1].CGColor,
+//                                                             (id)[UIColor colorWithRed:(float)131/255 green:(float)175/255 blue:(float)155/255 alpha:1].CGColor,
+//                                                              nil];
 
     
     
@@ -330,17 +416,19 @@ bool APPFORITUNES = true;
     exists = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory];
     if (!exists) return;
     if (isDirectory) {
-        ViewController *content = [[ViewController alloc] initWithDirectory:path];
-        [self presentViewController:content animated:YES completion:nil];
+        ViewController *controller = [[ViewController alloc] initWithDirectory:path withEnableHardDecoder:_enableHardDecoder];
+        [self presentViewController:controller animated:YES completion:nil];
     }else{
         BOOL sign = NO;
         NSRange range = [[path lowercaseString] rangeOfString:@"mp4"];
         NSRange range1 = [[path lowercaseString] rangeOfString:@"mov"];
         if (range.length > 0 || range1.length > 0)
             sign = YES;
-        if (_closeHardDecoderSwith.on) {
+        
+        if (!_enableHardDecoder) {
             sign = NO;
         }
+        
         IOSUPlayerController *playerController = [[IOSUPlayerController alloc]
                                                   initWithContentURL:path withEnableHevc:_enableHevc withHardDecoder:sign];
         [self presentViewController:playerController animated:YES completion:nil];
@@ -376,10 +464,10 @@ bool APPFORITUNES = true;
     return @"delete";
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
-{
-    return [_keys objectAtIndex:section];
-}
+//- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
+//{
+//    return [_keys objectAtIndex:section];
+//}
 
 #pragma mark - operation
 
@@ -390,7 +478,14 @@ bool APPFORITUNES = true;
 
 
 -(void)switchChanged:(id)sender{
-    //do nothing
+    _enableHardDecoder = _closeHardDecoderSwith.on;
+}
+
+-(void)returnBtnTouch:(id)sender{
+    if (self.presentingViewController || !self.navigationController)
+        [self dismissViewControllerAnimated:YES completion:nil];
+    else
+        [self.navigationController popViewControllerAnimated:YES];
 }
 
 -(void)dealloc

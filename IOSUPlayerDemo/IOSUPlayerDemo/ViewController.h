@@ -10,6 +10,6 @@
 
 @interface ViewController : UIViewController<UITableViewDelegate, UITableViewDataSource>
 
--(id)initWithDirectory:(NSString *)directory;
+-(id)initWithDirectory:(NSString *)directory withEnableHardDecoder:(BOOL)on;
 
 @end

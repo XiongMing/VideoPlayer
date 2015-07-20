@@ -17,7 +17,7 @@
 #pragma mark - EGLSurface
 EGLSurface::EGLSurface()
 {
-    ulog_info(@"EGLSurface constructor");
+    ulog_info("EGLSurface constructor");
     glView = nil;
     panelView = nil;
     uPlayer = NULL;

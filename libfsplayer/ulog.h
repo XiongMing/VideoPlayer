@@ -23,7 +23,7 @@
 /**
   * @brief  是否启用log功能
 */
-#define UPLAYER_ENABLE_LOG		0
+#define UPLAYER_ENABLE_LOG		1
 #define UPLAYER_DLNA_ENABLE_LOG		0
 #define UPLAYER_ENABLE_FFMPEG_LOG		0
 /*

@@ -33,8 +33,10 @@ NSString *const FSIOSPlayerMediaSeekCompleteNotification = @"FSIOSPlayerMediaSee
 //and MEDIA_INFO_PREPARE_ERROR
 NSString *const FSIOSPlayerMediaPlaybackDidFinishNotification = @"FSIOSPlayerMediaPlaybackDidFinishNotification";
     NSString *const FSIOSPlayerMediaPlaybackDidFinishReason = @"FSIOSPlayerMediaPlaybackDidFinishReason";
+    NSString *const MPMoviePlayerPlaybackErrorCodeMainInfoKey = @"MPMoviePlayerPlaybackErrorCodeInfoKey";
+    NSString *const MPMoviePlayerPlaybackErrorCodeExtraInfoKey = @"MPMoviePlayerPlaybackErrorCodeExtraInfoKey";
     NSString *const FSIOSPlayerMediaPlaybackDidFinishExtraReason = @"FSIOSPlayerMediaPlaybackDidFinishExtraReason";
-    NSString *const MPMoviePlayerPlaybackErrorCodeInfoKey = @"MPMoviePlayerPlaybackErrorCodeInfoKey";
+    NSString *const FSIOSPlayerMediaPlaybackDidFinishMainReason = @"FSIOSPlayerMediaPlaybackDidFinishMainReason";
 /*
  when FSIOSPlayerMediaPlaybackDidFinishNotification sends MPMovieFinishReasonPlaybackError,
 FSIOSPlayerMediaPlaybackDidFinishExtraReason message should follow which shows details of MPMovieFinishReasonPlaybackError
@@ -101,9 +103,12 @@ void Listener::notify(int msg, int ext1, int ext2)
                 MPMovieFinishReason reason =
                 MEDIA_INFO_PLAY_TO_END == msg ? MPMovieFinishReasonPlaybackEnded:MPMovieFinishReasonPlaybackError;
                 NSNumber *number1 = [NSNumber numberWithInteger:reason];
-                NSNumber *number2 = [NSNumber numberWithInteger:ext1];
+                NSNumber *number2 = [NSNumber numberWithInteger:msg];
+                NSNumber *number3 = [NSNumber numberWithInt:ext1];
                 NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys: number1, FSIOSPlayerMediaPlaybackDidFinishReason,
-                                          number2, FSIOSPlayerMediaPlaybackDidFinishExtraReason, nil];
+                                          number2, FSIOSPlayerMediaPlaybackDidFinishMainReason,
+                                          number3,FSIOSPlayerMediaPlaybackDidFinishExtraReason,
+                                          nil];
                 [[NSNotificationCenter defaultCenter] postNotificationName:
                                                     FSIOSPlayerMediaPlaybackDidFinishNotification
                                                     object:_player userInfo:userInfo];
@@ -447,9 +452,11 @@ void Listener::notify(int msg, int ext1, int ext2)
     if (_playbackDidFinishedCode == MPMovieFinishReasonUserExited) {
         
         NSNumber *reason = [NSNumber numberWithInteger:MPMovieFinishReasonUserExited];
-        NSNumber *errorCode = [NSNumber numberWithInteger:0];
+        NSNumber *mainCode = [NSNumber numberWithInteger:0];
+        NSNumber *extraCode = [NSNumber numberWithInt:0];
         NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:reason, MPMoviePlayerPlaybackDidFinishReasonUserInfoKey,
-                             errorCode, MPMoviePlayerPlaybackErrorCodeInfoKey, nil];
+                             mainCode, MPMoviePlayerPlaybackErrorCodeMainInfoKey,
+                             extraCode, MPMoviePlayerPlaybackErrorCodeExtraInfoKey, nil];
         [self postPlaybackDidFinish:dic];
     }
     
@@ -779,9 +786,11 @@ void Listener::notify(int msg, int ext1, int ext2)
     }
     
     NSNumber *reason = [notification.userInfo objectForKey:FSIOSPlayerMediaPlaybackDidFinishReason];
-    NSNumber *errorCode = [notification.userInfo objectForKey:FSIOSPlayerMediaPlaybackDidFinishExtraReason];
+    _playbackDidFinishedCode = [reason integerValue];
+    NSNumber *errorCode1 = [notification.userInfo objectForKey:FSIOSPlayerMediaPlaybackDidFinishMainReason];
+    NSNumber *errorCode2 = [notification.userInfo objectForKey:FSIOSPlayerMediaPlaybackDidFinishExtraReason];
     NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:reason, MPMoviePlayerPlaybackDidFinishReasonUserInfoKey,
-                         errorCode, MPMoviePlayerPlaybackErrorCodeInfoKey, nil];
+                         errorCode1, MPMoviePlayerPlaybackErrorCodeMainInfoKey, errorCode2,MPMoviePlayerPlaybackErrorCodeExtraInfoKey, nil];
     [self postPlaybackDidFinish:dic];
 }
 

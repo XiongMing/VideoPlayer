@@ -12,7 +12,8 @@
 //It should be fallowed when player posts message "MPMoviePlayerPlaybackDidFinishNotification"
 //You can get value from dictionary which keys include "MPMoviePlayerPlaybackErrorCodeInfoKey"
 //You can use it for more dealing with.
-MP_EXTERN NSString * const MPMoviePlayerPlaybackErrorCodeInfoKey;
+MP_EXTERN NSString * const MPMoviePlayerPlaybackErrorCodeMainInfoKey;
+MP_EXTERN NSString * const MPMoviePlayerPlaybackErrorCodeExtraInfoKey;
 
 @class FSIOSPlayer;
 

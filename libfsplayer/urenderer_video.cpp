@@ -75,6 +75,11 @@ void URendererVideo::process(av_link pkt) {
 
 }
 void URendererVideo::render() {
+    
+#if PLATFORM_DEF == IOS_PLATFORM
+    @autoreleasepool{
+#endif
+        
 	av_link pkt;
 
 	int64_t last_time = 0;
@@ -92,6 +97,7 @@ void URendererVideo::render() {
 
 	ulog_info("openGL width:%d height:%d\n",mPlayer->mVideoWidth,mPlayer->mVideoHeight);
 
+    
 	while (!mPlayer->isStop()) {
 
         
@@ -250,12 +256,15 @@ void URendererVideo::render() {
         pthread_rwlock_unlock(&mPlayer->mRWLock);
 #endif
 	}
+        
 
 	//释放绘图对象
 	#if PLATFORM_DEF != LINUX_PLATFORM
 		delete mGraphics;
 	#endif
-
+#if PLATFORM_DEF == IOS_PLATFORM
+    }
+#endif
 	ulog_info("URendererVideo::render exit");
 }
 void URendererVideo::stop() {

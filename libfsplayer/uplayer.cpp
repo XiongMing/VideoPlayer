@@ -612,8 +612,15 @@ status_t UPlayer::prepareVideo() {
     //获得视频流的索引号
     for (int i = 0; i < mMediaFile->nb_streams; i++) {
         if (AVMEDIA_TYPE_VIDEO == mMediaFile->streams[i]->codec->codec_type) {
-            mVideoStreamIndex = i;
-            break;
+            
+#if PLATFORM_DEF == IOS_PLATFORM
+            if (!(mMediaFile->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)) {
+#endif
+                mVideoStreamIndex = i;
+                break;
+#if PLATFORM_DEF == IOS_PLATFORM
+            }
+#endif
         }
     }
 #if !DEBUG_ENABLE_VIDEO_STREAM
@@ -1293,8 +1300,13 @@ void UPlayer::getCurrentPosition(int *msec) {
     if (mState < UPLAYER_PREPARED) {
         *msec = 0;
     } else {
-        
-        if(mIsSeeking){
+       
+#if PLATFORM_DEF != IOS_PLATFORM
+        if(mIsSeeking)
+#else
+        if(mIsSeeking  || !mFirstAudioPacketDecoded)
+#endif
+        {
             *msec = mSeekPosition;
         }else{
             *msec = mCurrentPosition;
@@ -1655,7 +1667,7 @@ void UPlayer::init(bool flag) {
     mEndPlaybackTime = 0;
     mLastPacketPts = 0;
     mIsFlush = false;
-    mFirstAudioPacketDecoded = false;
+    mFirstAudioPacketDecoded = true;
     mAudioDecodedPts = 0;
     mPreparedDone = 0;
     mFirstVideoFrameDecoded = false;

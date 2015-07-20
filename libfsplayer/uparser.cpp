@@ -333,7 +333,8 @@ void UParser::parse() {
             mPlayer->mEof = false;
         }
         
-        if(AVERROR_EOF == ret && !mPlayer->mEof)
+//        if(AVERROR_EOF == ret && !mPlayer->mEof)
+        if(ret < 0 && !mPlayer->mEof)
             mPlayer->mEof = true;
 #endif
 
@@ -437,6 +438,7 @@ void UParser::parse() {
 			av_free_packet(&packet);
 			continue;
 		}
+        
 #if PLATFORM_DEF == IOS_PLATFORM
         //get last packet pts  used by "BUFFERING_START" message in "renderer_video.h" module.
         mPlayer->mLastPacketPts = last_packet_pts;
