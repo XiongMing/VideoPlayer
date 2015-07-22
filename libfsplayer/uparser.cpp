@@ -160,6 +160,16 @@ void UParser::parse() {
 //        }
 //
         
+        if (!mPlayer->playOver2(mPlayer->mLastPacketPts, mPlayer->mAudioOrVideo) && !mPlayer->mNeedBufferring){
+            if(mPlayer->mStreamType & UPLAYER_STREAM_VIDEO && ((mPlayer->mVPacketQueue->size() < mPlayer->mMinBufferingQueueNum)
+                || ((0 == mPlayer->mPreparedDone || 1 == mPlayer->mPreparedDone) && mPlayer->mYUVSlotQueue->size() != 0))){
+                //该判断保证视频yuv空槽用完，因为首次启动或者seek操作对解码要求比较高，可能出现短暂的音视频不同步现象
+                mPlayer->mNeedBufferring = true;
+                mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_START);
+                ulog_info("MEDIA_INFO_BUFFERING_START in renderer_video.cpp");
+            }
+        }
+        
         //第一次启动发送准备完成的操作
         if (0 == mPlayer->mPreparedDone){
             bool playOver2 = mPlayer->playOver2(mPlayer->mLastPacketPts, mPlayer->mAudioOrVideo);
@@ -339,7 +349,7 @@ void UParser::parse() {
 #endif
 
 		if (ret < 0) {
-
+            
 				if(0 == end_time){
 					end_time = av_gettime();
 					usleep(UPLAYER_PAUSE_TIME);

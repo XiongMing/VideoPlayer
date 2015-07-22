@@ -53,6 +53,7 @@
 		F17681ED1A512297008EBF90 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681EC1A512297008EBF90 /* MediaPlayer.framework */; };
 		F17681EF1A5122A4008EBF90 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681EE1A5122A4008EBF90 /* QuartzCore.framework */; };
 		F17681F11A5122AE008EBF90 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17681F01A5122AE008EBF90 /* CoreAudio.framework */; };
+		F190BE021B5F3A900059E7DA /* uplayer_codec_info.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F190BE001B5F3A900059E7DA /* uplayer_codec_info.cpp */; };
 		F1C872651B26C78A00372D7B /* playerSlider@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F1C872641B26C78A00372D7B /* playerSlider@2x.png */; };
 		F1C872671B26D3FE00372D7B /* playerPlay@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F1C872661B26D3FE00372D7B /* playerPlay@2x.png */; };
 		F1C8726D1B26F2C200372D7B /* playerPause@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F1C8726C1B26F2C200372D7B /* playerPause@2x.png */; };
@@ -145,6 +146,8 @@
 		F17681EC1A512297008EBF90 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		F17681EE1A5122A4008EBF90 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		F17681F01A5122AE008EBF90 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		F190BE001B5F3A900059E7DA /* uplayer_codec_info.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = uplayer_codec_info.cpp; path = ../libfsplayer/uplayer_codec_info.cpp; sourceTree = "<group>"; };
+		F190BE011B5F3A900059E7DA /* uplayer_codec_info.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uplayer_codec_info.h; path = ../libfsplayer/uplayer_codec_info.h; sourceTree = "<group>"; };
 		F1C872641B26C78A00372D7B /* playerSlider@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "playerSlider@2x.png"; path = "png/playerSlider@2x.png"; sourceTree = "<group>"; };
 		F1C872661B26D3FE00372D7B /* playerPlay@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "playerPlay@2x.png"; path = "png/playerPlay@2x.png"; sourceTree = "<group>"; };
 		F1C8726C1B26F2C200372D7B /* playerPause@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "playerPause@2x.png"; path = "png/playerPause@2x.png"; sourceTree = "<group>"; };
@@ -229,6 +232,8 @@
 				F16F44081ACD203900EA260A /* uparser.h */,
 				F16F44091ACD203900EA260A /* uplayer.cpp */,
 				F16F440A1ACD203900EA260A /* uplayer.h */,
+				F190BE001B5F3A900059E7DA /* uplayer_codec_info.cpp */,
+				F190BE011B5F3A900059E7DA /* uplayer_codec_info.h */,
 				F16F440B1ACD203900EA260A /* uqueue.cpp */,
 				F16F440C1ACD203900EA260A /* uqueue.h */,
 				F16F440D1ACD203900EA260A /* urenderer_audio.h */,
@@ -439,6 +444,7 @@
 				F16F43F11ACD200900EA260A /* FSIOSPlayer.mm in Sources */,
 				F16F44231ACD203900EA260A /* uqueue.cpp in Sources */,
 				F16F44221ACD203900EA260A /* uplayer.cpp in Sources */,
+				F190BE021B5F3A900059E7DA /* uplayer_codec_info.cpp in Sources */,
 				F16F44181ACD203900EA260A /* uallocator.cpp in Sources */,
 				F17681C41A511FBC008EBF90 /* ViewController.m in Sources */,
 				F16F44251ACD203900EA260A /* urenderer_video.cpp in Sources */,

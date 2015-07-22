@@ -600,12 +600,12 @@ void Listener::notify(int msg, int ext1, int ext2)
     
     NSTimeInterval seekTime = currentPlaybackTime;
     
-    seekTime = seekTime < self.initialPlaybackTime ? self.initialPlaybackTime : seekTime;
-    double tmpDuration = self.endPlaybackTime != 0 ? self.endPlaybackTime : self.duration;
-    seekTime = seekTime > tmpDuration ? tmpDuration : seekTime;
 //    seekTime = seekTime < self.initialPlaybackTime ? self.initialPlaybackTime : seekTime;
-//    seekTime = seekTime < 0.0f ? 0.0f : seekTime;
-//    seekTime = seekTime > self.duration ? self.duration : seekTime;
+//    double tmpDuration = self.endPlaybackTime != 0 ? self.endPlaybackTime : self.duration;
+//    seekTime = seekTime > tmpDuration ? tmpDuration : seekTime;
+//    seekTime = seekTime < self.initialPlaybackTime ? self.initialPlaybackTime : seekTime;
+    seekTime = seekTime < 0.0f ? 0.0f : seekTime;
+    seekTime = seekTime > self.duration ? self.duration : seekTime;
     _player->seekTo(seekTime * 1000);
 }
 
@@ -768,6 +768,7 @@ void Listener::notify(int msg, int ext1, int ext2)
 -(void)mediaSeekComplete:(NSNotification *)notification{
     
     if (_playerStopped || !_player) return;
+    
     self.playbackState = _player->isPlaying() ? MPMoviePlaybackStatePlaying : MPMoviePlaybackStatePaused;
     NSNotification * notification1 = [NSNotification notificationWithName:
                                      MPMoviePlayerPlaybackStateDidChangeNotification object:self];

@@ -19,11 +19,14 @@
 
 -(void)setFrame:(CGRect)frame{
     ((CAGradientLayer *)self.layer).colors = [NSArray arrayWithObjects:
-//                                                 (id)[UIColor colorWithRed:(float)249/255 green:(float)205/255 blue:(float)173/255 alpha:1].CGColor,
-//                                                 (id)[UIColor colorWithRed:(float)131/255 green:(float)175/255 blue:(float)155/255 alpha:1].CGColor,nil];
-                                              (id)[UIColor colorWithRed:(float)220/255 green:(float)161/255 blue:(float)151/255 alpha:1].CGColor,
-                                              (id)[UIColor colorWithRed:(float)210/255 green:(float)188/255 blue:(float)167/255 alpha:1].CGColor,
-                                              (id)[UIColor colorWithRed:(float)147/255 green:(float)224/255 blue:(float)255/255 alpha:1].CGColor,nil];
+//                                              (id)[UIColor lightGrayColor].CGColor,
+//                                              (id)[UIColor darkGrayColor].CGColor,nil];
+                                                 (id)[UIColor colorWithRed:(float)249/255 green:(float)205/255 blue:(float)173/255 alpha:1].CGColor,
+                                                 (id)[UIColor colorWithRed:(float)131/255 green:(float)175/255 blue:(float)155/255 alpha:1].CGColor,nil];
+//                                              (id)[UIColor colorWithRed:(float)131/255 green:(float)175/255 blue:(float)155/255 alpha:1].CGColor,
+//                                              (id)[UIColor colorWithRed:(float)220/255 green:(float)161/255 blue:(float)151/255 alpha:1].CGColor,
+//                                              (id)[UIColor colorWithRed:(float)210/255 green:(float)188/255 blue:(float)167/255 alpha:1].CGColor,
+//                                              (id)[UIColor colorWithRed:(float)147/255 green:(float)224/255 blue:(float)255/255 alpha:1].CGColor,nil];
     [super setFrame:frame];
 }
 
@@ -42,6 +45,7 @@
     UITextView *_urlText;
     UIButton *_doneButton;
     UITapGestureRecognizer *_tap;
+    UITapGestureRecognizer *_contentModeTap;
     UISwipeGestureRecognizer *_swip;
     UILongPressGestureRecognizer *_longPressGes;
     
@@ -235,7 +239,7 @@
 
 -(void)viewDidUnload{
     [super viewDidUnload];
-    [self appWillEnterBackGroundActionOrDoneDidTouch];
+//    [self appWillEnterBackGroundActionOrDoneDidTouch];
     NSLog(@"player controller viewdidunload");
 }
 -(void)viewDidLoad
@@ -272,6 +276,7 @@
     [self createBottomBar:bounds withBotH:botH];
     
     [self createTap];
+    [self createContentModeTap];
 //    [self createSwip];
 //    [self createLongPrecessGes];
     
@@ -279,10 +284,12 @@
     [self createPlayBtn];
     [self createPauseBtn];
     
+#if !APPFORITUNES
     [self createContentModeBtn];
     [self createFullscreenBtn];
     [self createRepeatModeBtn];
     [self createDestroyBtn];
+#endif
     [self createVoiceItem];
     
     [self createSpaceItem];
@@ -309,6 +316,7 @@
 //    [_extraView addGestureRecognizer:_longPressGes];
     [_extraView addSubview:_topBar];
     [_extraView addSubview:_bottomBar];
+    [_tapView addGestureRecognizer:_contentModeTap];
     
     [_topBar addSubview:_topHUD];
     [_topHUD addSubview:_doneButton];
@@ -487,6 +495,7 @@
             UISlider *slider = (UISlider *)view;
             slider.backgroundColor = [UIColor clearColor];
             slider.minimumTrackTintColor = [UIColor blackColor];
+//            slider.maximumTrackTintColor = [UIColor darkGrayColor];
             [slider setThumbImage:[UIImage imageNamed:@"playerSlider"] forState:UIControlStateHighlighted];
             [slider setThumbImage:[UIImage imageNamed:@"playerSlider"] forState:UIControlStateNormal];
 //            slider.value = 0.1;
@@ -504,6 +513,7 @@
     _progressSlider.value = 0;
     _progressSlider.backgroundColor = [UIColor clearColor];
     _progressSlider.minimumTrackTintColor = [UIColor blackColor];
+//    _progressSlider.maximumTrackTintColor = [UIColor darkGrayColor];
     [_progressSlider setThumbImage:[UIImage imageNamed:@"playerSlider"] forState:UIControlStateHighlighted];
     [_progressSlider setThumbImage:[UIImage imageNamed:@"playerSlider"] forState:UIControlStateNormal];
 //    _progressSlider.maximumTrackTintColor = [UIColor whiteColor];
@@ -549,6 +559,13 @@
     _tap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(tapOperation)];
     _tap.numberOfTapsRequired = 1;
     _tap.numberOfTouchesRequired = 1;
+}
+
+-(void)createContentModeTap{
+    _contentModeTap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(contentModeTapTouch)];
+    _contentModeTap.numberOfTapsRequired = 2;
+    _contentModeTap.numberOfTouchesRequired = 1;
+    [_tap requireGestureRecognizerToFail:_contentModeTap];
 }
 
 -(void)createSwip{
@@ -658,6 +675,26 @@
         
     }
     
+}
+
+-(void)contentModeTapTouch{
+    NSLog(@"contentModeTapTouch");
+    if (MPMovieScalingModeAspectFit == _player.scalingMode) {
+        
+        _player.scalingMode = MPMovieScalingModeAspectFill;
+        _contentModeBtn.title = @"填充";
+        
+    }else if( MPMovieScalingModeAspectFill == _player.scalingMode){
+        
+        _player.scalingMode = MPMovieScalingModeFill;
+        _contentModeBtn.title = @"黑边";
+        
+    }else{
+        
+        _player.scalingMode = MPMovieScalingModeAspectFit;
+        _contentModeBtn.title = @"裁边";
+        
+    }
 }
 
 -(void)sliderTouchDown:(id)sender{
@@ -1059,9 +1096,10 @@
         _player.view.userInteractionEnabled = NO;
     }else{
         _player = [[FSIOSPlayer alloc] init];
+        _player.enableHevcOptimization = _enableHevc;
         _player.fullScreenAnimated = YES;
     }
-//    _player.enableHevcOptimization = _enableHevc;
+    
     _player.contentURL = _url;
 //    _player.contentURL = nil;
     [_player setFullscreen:YES animated:YES];

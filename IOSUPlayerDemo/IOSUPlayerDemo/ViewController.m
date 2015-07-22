@@ -8,6 +8,7 @@
 
 #import "ViewController.h"
 #import "IOSUPlayerController.h"
+#import "uplayer_codec_info.h"
 
 bool APPFORITUNES = true;
 
@@ -33,6 +34,7 @@ bool APPFORITUNES = true;
     BOOL                _enableHardDecoder;
     BackGroundView      *_headerView;
     UILabel             *_playerNameLabel;
+    
 }
 @end
 
@@ -389,7 +391,9 @@ bool APPFORITUNES = true;
     cell.textLabel.textColor = [UIColor blackColor];
 //    cell.imageView.image = [UIImage imageNamed:@"play24x24.png"];
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-    cell.selectionStyle = UITableViewCellSelectionStyleBlue;
+//    cell.accessoryView.backgroundColor = [UIColor blackColor];
+//    cell.editingAccessoryView.backgroundColor = [UIColor greenColor];
+    cell.selectionStyle = UITableViewCellSelectionStyleGray;
     
     return cell;
 }
@@ -428,6 +432,12 @@ bool APPFORITUNES = true;
         if (!_enableHardDecoder) {
             sign = NO;
         }
+        
+        UPlayCodecInfo info;
+        if(sign && info.getPlayerCodecInfo([path UTF8String]))
+            sign = YES;
+        else
+            sign = NO;
         
         IOSUPlayerController *playerController = [[IOSUPlayerController alloc]
                                                   initWithContentURL:path withEnableHevc:_enableHevc withHardDecoder:sign];

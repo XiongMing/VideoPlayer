@@ -138,22 +138,27 @@ void URendererVideo::render() {
          又或者如果是首次启动或seek操作后，如果mYUVSlotQueue还有空槽（要保证空槽用完）
          发送缓冲开始消息 Add by HuangWeiqing
          */
-        if (!mPlayer->playOver2(mPlayer->mLastPacketPts, mPlayer->mAudioOrVideo) && !mPlayer->mNeedBufferring){
-            if(mPlayer->mVPacketQueue->size() < /*UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM*/ mPlayer->mMinBufferingQueueNum
-               /* || ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size() <= /*UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM //mPlayer->mMinBufferingQueueNum)*/
-                || ((0 == mPlayer->mPreparedDone || 1 == mPlayer->mPreparedDone) && mPlayer->mYUVSlotQueue->size() != 0)){
-                
-                //((0 == mPlayer->mPreparedDone || 1 == mPlayer->mPreparedDone) && mPlayer->mYUVSlotQueue->size() != 0)
-                //该判断保证视频yuv空槽用完，因为首次启动或者seek操作对解码要求比较高，可能出现短暂的音视频不同步现象
-                showLastFrame();
-                mPlayer->mNeedBufferring = true;
-                mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_START);
-                usleep(UPLAYER_PAUSE_TIME);
-                ulog_info("MEDIA_INFO_BUFFERING_START in renderer_video.cpp");
-                continue;
-            }
-        }
+//        if (!mPlayer->playOver2(mPlayer->mLastPacketPts, mPlayer->mAudioOrVideo) && !mPlayer->mNeedBufferring){
+//            if(mPlayer->mVPacketQueue->size() < /*UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM*/ mPlayer->mMinBufferingQueueNum
+//               /* || ((mPlayer->mStreamType & UPLAYER_STREAM_AUDIO) && mPlayer->mAPacketQueue->size() <= /*UPLAYER_VIDEO_PACKET_BUFFERRING_MIN_NUM //mPlayer->mMinBufferingQueueNum)*/
+//                || ((0 == mPlayer->mPreparedDone || 1 == mPlayer->mPreparedDone) && mPlayer->mYUVSlotQueue->size() != 0)){
+//                
+//                //((0 == mPlayer->mPreparedDone || 1 == mPlayer->mPreparedDone) && mPlayer->mYUVSlotQueue->size() != 0)
+//                //该判断保证视频yuv空槽用完，因为首次启动或者seek操作对解码要求比较高，可能出现短暂的音视频不同步现象
+//                showLastFrame();
+//                mPlayer->mNeedBufferring = true;
+//                mPlayer->notifyMsg(MEDIA_INFO_BUFFERING_START);
+//                usleep(UPLAYER_PAUSE_TIME);
+//                ulog_info("MEDIA_INFO_BUFFERING_START in renderer_video.cpp");
+//                continue;
+//            }
+//        }
         
+        if (mPlayer->mNeedBufferring) {
+            showLastFrame();
+            usleep(UPLAYER_PAUSE_TIME);
+            continue;
+        }
         
         /*
          如果是视频首次播放，又或者是seek操作，备份解码得第一帧，用于显示
